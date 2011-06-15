@@ -86,6 +86,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private static ChangeableText castleHealth;
 	
 	private HUD hud;
+	private static ChangeableText sMoney;
+	public static int mMoney = 0; //This is the amount of cash so far
 	
 	// ========================================
 	// Constructors
@@ -157,6 +159,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		RemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
 		GestureDefence.mMainScreen.registerUpdateHandler(RemoveStuff);
 		
+		this.mMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
+		
 		return GestureDefence.mMainScreen;
 		//return scene;
 	}
@@ -196,6 +200,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.mMainScreen.clearChildScene();
 				this.enemySpawnTimeHandler(2.0f);
 				this.loadCastle(CAMERA_WIDTH - (mCastleTexture.getWidth()), CAMERA_HEIGHT - 60 - mCastleTexture.getHeight());
+				
+				this.loadCashValue();
 				
 				GestureDefence.mMainScreen.registerUpdateHandler(new IUpdateHandler() {
 					@Override
@@ -267,6 +273,14 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		updateCastleHealth();
 	}
 	
+	private void loadCashValue()
+	{
+		sMoney = new ChangeableText(0 + 100, 0 + 20, this.mFont, "" + mMoney, "XXXXXX".length());
+		hud.getLastChild().attachChild(sMoney);
+		
+		updateCashValue();
+	}
+	
 	private void loadNewEnemy(float X, float Y) {
 		final Enemy newEnemy = new Enemy(X, Y, this.mEnemyTextureRegion.clone());
 		/* Note the clone() above,
@@ -285,6 +299,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public static void updateCastleHealth()
 	{
 		castleHealth.setText("" + Castle.getHealth());
+	}
+	
+	public static void updateCashValue()
+	{
+		sMoney.setText("" + mMoney);
 	}
 	
 	private void enemySpawnTimeHandler(float mSpawnDelay) {

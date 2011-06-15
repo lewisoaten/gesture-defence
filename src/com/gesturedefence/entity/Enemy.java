@@ -33,14 +33,20 @@ public class Enemy extends AnimatedSprite {
 		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
 		private float mGroundHitSpeed = 0.0f; //Used for damage calculations
 		private float mInitialY = this.getY(); //used to keep track of each enemy's ground levels
+		
 		private boolean mTimerHandler = false; //Used to track how long they were moved for
+		
 		private boolean mIsAirbourne = false; //Is the enemy airborne? (were they dragged up!)
 		private int lastSetAnimation = 0; //0 = none, 1 = running, 2 = falling, 3 = death
+		
 		private float mHealth = 300.0f; //The amount of health the enemy has to start with
 		private boolean mSetDeathAnimation = false; //Used to get death animation working properly
+		
 		private boolean mCanAttackCastle = false; //Used for attacking castle
 		private float mAttackDamage = 10.0f; //The amount of damage each attack does to the castle
 		private boolean mAttackedTheCastle = false; //Used to prevent enemy's doing loads of damage (caused by the period the frame is shown)
+		
+		private int mCashWorth = 40; //The amount each kill of this enemy is worth
 	
 	// ========================================
 	// Constructors
@@ -85,6 +91,11 @@ public class Enemy extends AnimatedSprite {
 					//Use set, NOT setEntity, if no parent null pointer exception!
 					pPoolItem.set(this,this.getParent());
 					GestureDefence.RemoveStuff.postPoolItem(pPoolItem);
+					
+					/* Add value of enemy to current cash amount
+					 * Then update it */
+					GestureDefence.mMoney += this.mCashWorth;
+					GestureDefence.updateCashValue();
 				}
 			}
 			else
