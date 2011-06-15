@@ -9,6 +9,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
+import org.anddev.andengine.engine.camera.hud.HUD;
 import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.engine.handler.timer.ITimerCallback;
 import org.anddev.andengine.engine.handler.timer.TimerHandler;
@@ -24,6 +25,7 @@ import org.anddev.andengine.entity.scene.menu.item.IMenuItem;
 import org.anddev.andengine.entity.scene.menu.item.TextMenuItem;
 import org.anddev.andengine.entity.scene.menu.item.decorator.ColorMenuItemDecorator;
 import org.anddev.andengine.entity.sprite.Sprite;
+import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.util.FPSLogger;
 import org.anddev.andengine.opengl.font.Font;
 import org.anddev.andengine.opengl.font.FontFactory;
@@ -39,6 +41,7 @@ import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 import android.graphics.Color;
 import android.view.KeyEvent;
 
+import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 
 public class GestureDefence extends BaseGameActivity implements IOnMenuItemClickListener {
@@ -61,7 +64,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private static Scene mMainScreen;
 	
-	public static EntityDetachRunnablePoolUpdateHandler RemoveStuff; //Temp for testing purposes!
+	public static EntityDetachRunnablePoolUpdateHandler RemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
 	private Texture mAutoParallaxBackgroundTexture;
 	
@@ -77,6 +80,12 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private Texture newEnemyTexture;
 	private TiledTextureRegion mEnemyTextureRegion;
 	private int enemyCount = 0;
+	
+	private Texture mCastleTexture;
+	private TextureRegion mCastleTextureRegion;
+	private static ChangeableText castleHealth;
+	
+	private HUD hud;
 	
 	// ========================================
 	// Constructors
@@ -117,6 +126,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.newEnemyTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		this.mEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(this.newEnemyTexture, this, "gfx/new_enemy.png", 0, 0, 3, 2);
 		this.mEngine.getTextureManager().loadTexture(this.newEnemyTexture);
+		
+		/* Load castle sprite */
+		this.mCastleTexture = new Texture(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.mCastleTextureRegion = TextureRegionFactory.createFromAsset(this.mCastleTexture, this, "gfx/crappy_castle.png", 0, 0);
+		this.mEngine.getTextureManager().loadTexture(this.mCastleTexture);
 	}
 	
 	@Override
@@ -154,7 +168,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	@Override
 	public boolean onKeyDown(final int pKeyCode, final KeyEvent pEvent)
 	{
-		/* Menu key pressed, load ingame menu */
+		/* Menu key pressed, load in-game menu */
 		if(pKeyCode ==KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{
 			if(GestureDefence.mMainScreen.hasChildScene())
@@ -181,6 +195,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				/* DO some start game code at some point */
 				GestureDefence.mMainScreen.clearChildScene();
 				this.enemySpawnTimeHandler(2.0f);
+				this.loadCastle(CAMERA_WIDTH - (mCastleTexture.getWidth()), CAMERA_HEIGHT - 60 - mCastleTexture.getHeight());
 				
 				GestureDefence.mMainScreen.registerUpdateHandler(new IUpdateHandler() {
 					@Override
@@ -240,10 +255,22 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		return menuScene;
 	}
 	
+	private void loadCastle(float X, float Y) {
+		final Castle mCastle = new Castle(X, Y, this.mCastleTextureRegion);
+		this.mEngine.getScene().getLastChild().attachChild(mCastle);
+		
+		hud = new HUD();
+		castleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, this.mFont, "XXXXXX", "XXXXXX".length());
+		hud.getLastChild().attachChild(castleHealth);
+		mCamera.setHUD(hud);
+		
+		updateCastleHealth();
+	}
+	
 	private void loadNewEnemy(float X, float Y) {
 		final Enemy newEnemy = new Enemy(X, Y, this.mEnemyTextureRegion.clone());
 		/* Note the clone() above,
-		 * without this all sprites using the same texture will always be on the same frame,
+		 * without this all sprite's using the same texture will always be on the same frame,
 		 * change one change them all
 		 * This was a 3 hour bitch to find...
 		 * now it creates a clone of the sprite for each enemy,
@@ -253,6 +280,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.mEngine.getScene().registerTouchArea(newEnemy);
 		this.mEngine.getScene().setTouchAreaBindingEnabled(true);
 		enemyCount++;
+	}
+	
+	public static void updateCastleHealth()
+	{
+		castleHealth.setText("" + Castle.getHealth());
 	}
 	
 	private void enemySpawnTimeHandler(float mSpawnDelay) {

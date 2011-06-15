@@ -32,12 +32,15 @@ public class Enemy extends AnimatedSprite {
 		private float mMoveDelay = 0.0f; //Used to store how long enemy was dragged
 		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
 		private float mGroundHitSpeed = 0.0f; //Used for damage calculations
-		private float mInitialY = this.getY(); //used to keep track of each enemys ground levels
+		private float mInitialY = this.getY(); //used to keep track of each enemy's ground levels
 		private boolean mTimerHandler = false; //Used to track how long they were moved for
-		private boolean mIsAirbourne = false; //Is the enemy airbourne? (were they dragged up!)
+		private boolean mIsAirbourne = false; //Is the enemy airborne? (were they dragged up!)
 		private int lastSetAnimation = 0; //0 = none, 1 = running, 2 = falling, 3 = death
 		private float mHealth = 300.0f; //The amount of health the enemy has to start with
 		private boolean mSetDeathAnimation = false; //Used to get death animation working properly
+		private boolean mCanAttackCastle = false; //Used for attacking castle
+		private float mAttackDamage = 10.0f; //The amount of damage each attack does to the castle
+		private boolean mAttackedTheCastle = false; //Used to prevent enemy's doing loads of damage (caused by the period the frame is shown)
 	
 	// ========================================
 	// Constructors
@@ -86,11 +89,26 @@ public class Enemy extends AnimatedSprite {
 			}
 			else
 			{
+				if (this.mCanAttackCastle)
+				{
+					if (this.getCurrentTileIndex() == 5 && this.mAttackedTheCastle == false)
+					{
+						//Do ONE set of damage when the frame is in the right place (animation frame)
+						Castle.damageCastle(this.mAttackDamage);
+						GestureDefence.updateCastleHealth();
+						this.mAttackedTheCastle = true;
+					}
+					if (this.getCurrentTileIndex() != 5 && this.mAttackedTheCastle)
+					{
+						//Prevents the damage being done in overzealous amounts (ONCE per the frame)  
+						this.mAttackedTheCastle = false;
+					}
+				}
 				if(this.mPhysicsHandler.isEnabled())
 				{					
 					if (this.mIsAirbourne == true)
 					{
-						//Airbourne code
+						//Airborne code
 						if (lastSetAnimation != 2)
 						{
 							this.animate(new long[] {200,0}, 3, 4, true);
@@ -122,11 +140,11 @@ public class Enemy extends AnimatedSprite {
 						{
 							this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
 						}
-						//End of airbourne section
+						//End of airborne section
 					}
 					else
 					{
-						// Non airbourne code!
+						// Non airborne code!
 						if(this.mX < (GestureDefence.CAMERA_WIDTH - 160) && this.mY >= this.mInitialY)
 						{
 							this.mPhysicsHandler.setVelocityX(mSpeed);
@@ -142,8 +160,11 @@ public class Enemy extends AnimatedSprite {
 							this.setPosition(GestureDefence.CAMERA_WIDTH - 160 + (this.getWidth() / 2), this.mY);
 							if(lastSetAnimation != 3)
 							{
+								/* Attacking Castle
+								 * Using wrong animation, this is all testing */
 								this.animate(new long[] {200,200}, 4, 5, true);
 								lastSetAnimation = 3;
+								this.mCanAttackCastle = true;
 							}
 						}
 						
@@ -164,7 +185,7 @@ public class Enemy extends AnimatedSprite {
 							this.mPhysicsHandler.setVelocityY(0.0f);
 						}
 					}
-					//End of non-airbourne section
+					//End of non-airborne section
 				}
 			}				
 			super.onManagedUpdate(pSecondsElapsed);
@@ -195,6 +216,7 @@ public class Enemy extends AnimatedSprite {
 				case TouchEvent.ACTION_DOWN:
 					if (mTimerHandler == false)
 					{
+						this.mCanAttackCastle = false;
 						mMoveDelay = 0.0f;
 						mMoveX = this.mX;
 						mTimeMoved = new TimerHandler(1 / 20.0f, true, new ITimerCallback()
