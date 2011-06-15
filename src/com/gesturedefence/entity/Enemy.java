@@ -46,13 +46,14 @@ public class Enemy extends AnimatedSprite {
 		private float mAttackDamage = 10.0f; //The amount of damage each attack does to the castle
 		private boolean mAttackedTheCastle = false; //Used to prevent enemy's doing loads of damage (caused by the period the frame is shown)
 		
-		private int mCashWorth = 40; //The amount each kill of this enemy is worth
+		protected int mCashWorth = 40; //The amount each kill of this enemy is worth
 	
 	// ========================================
 	// Constructors
 	// ========================================
 	
-		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion){
+		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion)
+		{
 			super(pX, pY, pTiledTextureRegion);
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
@@ -84,18 +85,20 @@ public class Enemy extends AnimatedSprite {
 				}
 				else if (this.isAnimationRunning() == false)
 				{
+					/* Add value of enemy to current cash amount
+					 * Then update it
+					 * Also increase global kill count */
+					GestureDefence.sMoney += this.mCashWorth;
+					GestureDefence.updateCashValue();
+					GestureDefence.sKillCount++;
+					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal
 					 * recommenced by andengine author */
-					final EntityDetachRunnablePoolItem pPoolItem = GestureDefence.RemoveStuff.obtainPoolItem();
+					final EntityDetachRunnablePoolItem pPoolItem = GestureDefence.sRemoveStuff.obtainPoolItem();
 					//Use set, NOT setEntity, if no parent null pointer exception!
 					pPoolItem.set(this,this.getParent());
-					GestureDefence.RemoveStuff.postPoolItem(pPoolItem);
-					
-					/* Add value of enemy to current cash amount
-					 * Then update it */
-					GestureDefence.mMoney += this.mCashWorth;
-					GestureDefence.updateCashValue();
+					GestureDefence.sRemoveStuff.postPoolItem(pPoolItem);					
 				}
 			}
 			else

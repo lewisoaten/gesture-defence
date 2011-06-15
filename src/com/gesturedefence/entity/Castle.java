@@ -1,7 +1,7 @@
 package com.gesturedefence.entity;
 
 /**
- * Author: Mike Since: 12:05:40 - 15 Jun 2011
+ * Author: Mike Since: 14:20:32 - 15 Jun 2011
  */
 
 import org.anddev.andengine.entity.sprite.Sprite;
@@ -30,6 +30,17 @@ public class Castle extends Sprite {
 	// ========================================
 	// Getter & Setter
 	// ========================================
+		
+		public int getHealth()
+		{
+			return (int) Castle.mHealth;
+		}
+		
+		public boolean increaseHealth(int amount)
+		{
+			Castle.mHealth += amount;
+			return true;
+		}
 	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
@@ -43,12 +54,7 @@ public class Castle extends Sprite {
 		public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY)
 		{
 			return true;
-		}
-		
-		public static int getHealth()
-		{
-			return (int) Castle.mHealth;
-		}
+		}		
 		
 		public static boolean damageCastle(float damgeValue)
 		{

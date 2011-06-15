@@ -35,7 +35,6 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
-import org.anddev.andengine.util.MathUtils;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
 import android.graphics.Color;
@@ -43,28 +42,34 @@ import android.view.KeyEvent;
 
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
+import com.gesturedefence.util.Wave;
 
 public class GestureDefence extends BaseGameActivity implements IOnMenuItemClickListener {
 	// ========================================
 	// Constants
 	// ========================================
 	
-	public static final int CAMERA_WIDTH = 720;
-	public static final int CAMERA_HEIGHT = 480;
+	public final static int CAMERA_WIDTH = 720;
+	public final static int CAMERA_HEIGHT = 480;
 	
 	private static final int MENU_START = 0;
 	private static final int MENU_QUIT = MENU_START + 1;
 	private static final int MENU_RESTART = MENU_QUIT + 1;
+	public final static int MENU_BUY_HEALTH = MENU_RESTART + 1;
+	public final static int MENU_START_NEXT_WAVE = MENU_BUY_HEALTH + 1;
+	public final static int MENU_HEALTH = MENU_START_NEXT_WAVE + 1;
+	public final static int MENU_CASH = MENU_HEALTH + 1;
+	public final static int MENU_WAVE_NUMBER = MENU_CASH + 1;
 	
 	// ========================================
 	// Fields
 	// ========================================
 	
-	private Camera mCamera;
+	public static Camera sCamera;
 	
-	private static Scene mMainScreen;
+	public static Scene sMainScreen;
 	
-	public static EntityDetachRunnablePoolUpdateHandler RemoveStuff; //Used to safely remove Animated Sprite's (enemies)
+	public static EntityDetachRunnablePoolUpdateHandler sRemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
 	private Texture mAutoParallaxBackgroundTexture;
 	
@@ -72,22 +77,32 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private TextureRegion mParallaxLayerFront;
 	
 	private Texture mFontTexture;
-	private Font mFont;
+	public Font mFont;
 	
 	protected MenuScene mMenuScene;
 	protected MenuScene inGameMenu;
+	protected MenuScene mNewWave;
+	protected MenuScene mWaveComplete;
 	
 	private Texture newEnemyTexture;
-	private TiledTextureRegion mEnemyTextureRegion;
-	private int enemyCount = 0;
+	private static TiledTextureRegion sEnemyTextureRegion;
+	public static int sEnemyCount = 0;
 	
 	private Texture mCastleTexture;
 	private TextureRegion mCastleTextureRegion;
-	private static ChangeableText castleHealth;
+	private static ChangeableText sCastleHealth;
+	private static Castle sCastle;
 	
 	private HUD hud;
-	private static ChangeableText sMoney;
-	public static int mMoney = 0; //This is the amount of cash so far
+	private static ChangeableText sMoneyText;
+	public static int sMoney = 0; //This is the amount of cash so far
+	
+	public static int sKillCount = 0;
+	public static int sPreviousKillCount = 0;
+	public static Wave theWave;
+	
+	public static boolean sEndWaveActive = false; //Remove?
+	public static int sPreviousWaveNum = 0;
 	
 	// ========================================
 	// Constructors
@@ -103,19 +118,19 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	@Override
 	public Engine onLoadEngine() {
-	this.mCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), this.mCamera));
+	GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
+		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera));
 	}
 	
 	@Override
 	public void onLoadResources() {
 		/* Load Font settings*/
-		this.mFontTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.mFontTexture = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		
 		FontFactory.setAssetBasePath("font/");
 		this.mFont = FontFactory.createFromAsset(this.mFontTexture, this, "Capture it.ttf", 48, true, Color.WHITE);
 		this.mEngine.getTextureManager().loadTexture(this.mFontTexture);
-		this.mEngine.getFontManager().loadFont(this.mFont);
+		this.mEngine.getFontManager().loadFont(mFont);
 		
 		/* Initialise the background images, into scrolling background (parallax background) */
 		this.mAutoParallaxBackgroundTexture = new Texture(1024, 1024, TextureOptions.DEFAULT);
@@ -126,7 +141,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		
 		/* New animated Enemy Sprite's */
 		this.newEnemyTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.mEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(this.newEnemyTexture, this, "gfx/new_enemy.png", 0, 0, 3, 2);
+		GestureDefence.sEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(this.newEnemyTexture, this, "gfx/new_enemy.png", 0, 0, 3, 2);
 		this.mEngine.getTextureManager().loadTexture(this.newEnemyTexture);
 		
 		/* Load castle sprite */
@@ -143,25 +158,35 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.inGameMenu = this.createMenuScene(1);
 		
 		//final Scene scene = new Scene(1);
-		GestureDefence.mMainScreen = new Scene(1);
+		GestureDefence.sMainScreen = new Scene(1);
 		
 		/* Setup the scrolling background, can be removed, was just trying it out */
 		final AutoParallaxBackground autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 5);
 		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - this.mParallaxLayerBack.getHeight(), this.mParallaxLayerBack)));
 		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0, 80, this.mParallaxLayerFront)));
 		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-10.0f, new Sprite(35, 62, this.mParallaxLayerFront)));
-		GestureDefence.mMainScreen.setBackground(autoParallaxBackground);
+		GestureDefence.sMainScreen.setBackground(autoParallaxBackground);
 		/* End of scrolling Background */
 		
 		/* Load the main menu on startup */
-		GestureDefence.mMainScreen.setChildScene(this.mMenuScene, false, false, false);
+		GestureDefence.sMainScreen.setChildScene(this.mMenuScene, false, false, false);
 		
-		RemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
-		GestureDefence.mMainScreen.registerUpdateHandler(RemoveStuff);
+		GestureDefence.sRemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
+		GestureDefence.sMainScreen.registerUpdateHandler(sRemoveStuff);
 		
-		this.mMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
+		GestureDefence.sMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
 		
-		return GestureDefence.mMainScreen;
+		/* Wave setup stuff */
+		
+		theWave = new Wave();
+		this.mNewWave = theWave.createStartWaveScreen(this.mFont);
+		this.mNewWave.setOnMenuItemClickListener(this);
+		this.mWaveComplete = theWave.createEndWaveScreen(this.mFont);
+		this.mWaveComplete.setOnMenuItemClickListener(this);
+		
+		/* End of Wave setup stuff */
+		
+		return GestureDefence.sMainScreen;
 		//return scene;
 	}
 	
@@ -173,15 +198,15 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public boolean onKeyDown(final int pKeyCode, final KeyEvent pEvent)
 	{
 		/* Menu key pressed, load in-game menu */
-		if(pKeyCode ==KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
+		if(pKeyCode == KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{
-			if(GestureDefence.mMainScreen.hasChildScene())
+			if(GestureDefence.sMainScreen.hasChildScene())
 			{
 				this.inGameMenu.back();
 			}
 			else
 			{
-				GestureDefence.mMainScreen.setChildScene(this.inGameMenu, false, true, true);
+				GestureDefence.sMainScreen.setChildScene(this.inGameMenu, false, true, true);
 			}
 		return true;
 		}
@@ -197,16 +222,41 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		switch(pMenuItem.getID()) {
 			case MENU_START:
 				/* DO some start game code at some point */
-				GestureDefence.mMainScreen.clearChildScene();
-				this.enemySpawnTimeHandler(2.0f);
+				GestureDefence.sMainScreen.clearChildScene();
+				
+				GestureDefence.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
+				GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
+				
+				GestureDefence.sMainScreen.registerUpdateHandler(new TimerHandler(3.0f, true, new ITimerCallback()
+				{
+					@Override
+					public void onTimePassed(final TimerHandler pTimerHandler)
+					{
+						GestureDefence.sMainScreen.clearChildScene();
+						GestureDefence.sMainScreen.unregisterUpdateHandler(pTimerHandler);
+						GestureDefence.theWave.startNewWave(GestureDefence.this);
+					}
+				}));
+
 				this.loadCastle(CAMERA_WIDTH - (mCastleTexture.getWidth()), CAMERA_HEIGHT - 60 - mCastleTexture.getHeight());
 				
 				this.loadCashValue();
 				
-				GestureDefence.mMainScreen.registerUpdateHandler(new IUpdateHandler() {
+				GestureDefence.sMainScreen.registerUpdateHandler(new IUpdateHandler() {
 					@Override
 					public void onUpdate(float pSecondsElapsed) {
 						/* On every update */
+						if (GestureDefence.sPreviousWaveNum != GestureDefence.theWave.getWaveNumber() && GestureDefence.sKillCount != GestureDefence.sPreviousKillCount)
+							if ((GestureDefence.sKillCount - GestureDefence.sPreviousKillCount) == GestureDefence.theWave.getNumberEnemysToSpawn())
+							{
+								/* Oh they all dead */
+								GestureDefence.theWave.mCashAmountItem.setText("CASH : " + GestureDefence.sMoney);
+								GestureDefence.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.sCastle.getHealth());
+								GestureDefence.sMainScreen.setChildScene(mWaveComplete, false, true, true);
+								//GestureDefence.sEndWaveActive = true;
+								GestureDefence.sPreviousWaveNum = GestureDefence.theWave.getWaveNumber();
+								GestureDefence.sPreviousKillCount += GestureDefence.theWave.getNumberEnemysToSpawn();
+							}
 					}
 
 					@Override
@@ -224,6 +274,36 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			case MENU_RESTART:
 				/* Restarts the game */
 				return true;
+			case MENU_START_NEXT_WAVE:
+				/* Start the next wave */
+				GestureDefence.sMainScreen.clearChildScene();
+				GestureDefence.theWave.NextWave();
+				GestureDefence.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
+				GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
+				GestureDefence.sMainScreen.registerUpdateHandler(new TimerHandler(4.0f, true, new ITimerCallback()
+				{
+					@Override
+					public void onTimePassed(final TimerHandler pTimerHandler)
+					{
+						GestureDefence.sMainScreen.clearChildScene();
+						GestureDefence.sMainScreen.unregisterUpdateHandler(pTimerHandler);
+						GestureDefence.theWave.startNewWave(GestureDefence.this);
+						//GestureDefence.sEndWaveActive = false;
+					}
+				}));
+				return true;
+			case MENU_BUY_HEALTH:
+				/* Buying 100 health */
+				if (sMoney - 100 >= 0)
+				{
+					sMoney -= 100;
+					sCastle.increaseHealth(100);
+					GestureDefence.theWave.mCashAmountItem.setText("CASH : " + sMoney);
+					GestureDefence.theWave.mBuyMenuItem.setText("HEALTH : " + sCastle.getHealth());
+					GestureDefence.updateCashValue();
+					GestureDefence.updateCastleHealth();
+				}
+				return true;
 			default:
 				return false;
 		}
@@ -235,21 +315,21 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	// ========================================
 	
 	protected MenuScene createMenuScene(int whatMenu) {
-		final MenuScene menuScene = new MenuScene(this.mCamera);
+		final MenuScene menuScene = new MenuScene(GestureDefence.sCamera);
 		
 		if (whatMenu == 0)
 		{
-			final IMenuItem startMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_START, this.mFont, "START"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
+			final IMenuItem startMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_START, mFont, "START"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
 			startMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			menuScene.addMenuItem(startMenuItem);
 		} else if (whatMenu == 1)
 		{
-			final IMenuItem restartMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_RESTART, this.mFont, "RESTART"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
+			final IMenuItem restartMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_RESTART, mFont, "RESTART"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
 			restartMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			menuScene.addMenuItem(restartMenuItem);
 		}
 		
-		final IMenuItem quitMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_QUIT, this.mFont, "QUIT"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
+		final IMenuItem quitMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_QUIT, mFont, "QUIT"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
 		quitMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
 		menuScene.addMenuItem(quitMenuItem);
 
@@ -262,68 +342,47 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	}
 	
 	private void loadCastle(float X, float Y) {
-		final Castle mCastle = new Castle(X, Y, this.mCastleTextureRegion);
-		this.mEngine.getScene().getLastChild().attachChild(mCastle);
+		GestureDefence.sCastle = new Castle(X, Y, this.mCastleTextureRegion);
+		this.mEngine.getScene().getLastChild().attachChild(sCastle);
 		
-		hud = new HUD();
-		castleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, this.mFont, "XXXXXX", "XXXXXX".length());
-		hud.getLastChild().attachChild(castleHealth);
-		mCamera.setHUD(hud);
+		this.hud = new HUD();
+		sCastleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, mFont, "XXXXXX", "XXXXXX".length());
+		this.hud.getLastChild().attachChild(sCastleHealth);
+		GestureDefence.sCamera.setHUD(hud);
 		
 		updateCastleHealth();
 	}
 	
 	private void loadCashValue()
 	{
-		sMoney = new ChangeableText(0 + 100, 0 + 20, this.mFont, "" + mMoney, "XXXXXX".length());
-		hud.getLastChild().attachChild(sMoney);
+		sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont, "" + sMoney, "XXXXXX".length());
+		this.hud.getLastChild().attachChild(sMoneyText);
 		
 		updateCashValue();
 	}
 	
-	private void loadNewEnemy(float X, float Y) {
-		final Enemy newEnemy = new Enemy(X, Y, this.mEnemyTextureRegion.clone());
+	public void loadNewEnemy(float X, float Y) {
+		final Enemy newEnemy = new Enemy(X, Y, GestureDefence.sEnemyTextureRegion.clone());
 		/* Note the clone() above,
 		 * without this all sprite's using the same texture will always be on the same frame,
 		 * change one change them all
 		 * This was a 3 hour bitch to find...
 		 * now it creates a clone of the sprite for each enemy,
 		 * this allows each enemy to be its own sprite animation! */
-		
 		this.mEngine.getScene().getLastChild().attachChild(newEnemy);
 		this.mEngine.getScene().registerTouchArea(newEnemy);
 		this.mEngine.getScene().setTouchAreaBindingEnabled(true);
-		enemyCount++;
+		GestureDefence.sEnemyCount++;
 	}
 	
 	public static void updateCastleHealth()
 	{
-		castleHealth.setText("" + Castle.getHealth());
+		sCastleHealth.setText("" + sCastle.getHealth());
 	}
 	
 	public static void updateCashValue()
 	{
-		sMoney.setText("" + mMoney);
-	}
-	
-	private void enemySpawnTimeHandler(float mSpawnDelay) {
-		TimerHandler enemyTimerHandler;
-		
-		GestureDefence.mMainScreen.registerUpdateHandler(enemyTimerHandler = new TimerHandler(mSpawnDelay, true, new ITimerCallback()
-		{
-			@Override
-			public void onTimePassed(final TimerHandler pTimerHandler)
-			{
-				/* After Delay time has passed */
-				if (enemyCount < 20)
-				{
-					final float xPos = 5;
-					final float yPos = MathUtils.random(240.0f, CAMERA_HEIGHT - 32);
-				
-					loadNewEnemy(xPos, yPos);
-				}
-			}
-		}));
+		sMoneyText.setText("" + sMoney);
 	}
 	
 	// ========================================
