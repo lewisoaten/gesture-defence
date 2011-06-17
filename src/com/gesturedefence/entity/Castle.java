@@ -9,6 +9,8 @@ import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 
+import com.gesturedefence.GestureDefence;
+
 public class Castle extends Sprite {
 	// ========================================
 	// Constants
@@ -19,6 +21,7 @@ public class Castle extends Sprite {
 	// ========================================
 	
 		private static float mHealth = 3000.0f; //The amount of health the castle has to start with
+		private static GestureDefence base;
 	
 	// ========================================
 	// Constructors
@@ -31,6 +34,11 @@ public class Castle extends Sprite {
 	// ========================================
 	// Getter & Setter
 	// ========================================
+		
+		public void setCastleBase(GestureDefence base)
+		{
+			Castle.base = base;
+		}
 		
 		public int getHealth()
 		{
@@ -59,7 +67,15 @@ public class Castle extends Sprite {
 		
 		public static boolean damageCastle(float damgeValue)
 		{
-			Castle.mHealth -= damgeValue;
+			if (Castle.mHealth - damgeValue > 0)
+			{
+				Castle.mHealth -= damgeValue;
+			}
+			else
+			{
+				Castle.mHealth = 0;
+				base.sm.GameOverScreen();
+			}
 			return true;
 		}
 	

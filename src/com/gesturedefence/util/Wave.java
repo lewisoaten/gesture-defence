@@ -58,6 +58,11 @@ public class Wave {
 		{
 			return Wave.sNumberEnemysToSpawn;
 		}
+		
+		public void setWaveNumber(int theNumber)
+		{
+			Wave.sWaveNumber = theNumber;
+		}
 	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
@@ -83,6 +88,7 @@ public class Wave {
 					 * This could be changed, but for now its this */
 					int randomChance = MathUtils.random(1, 10);
 					int randomChance2 = MathUtils.random(1, 10);
+					int difficultyChance = MathUtils.random(1, 45);
 					
 					if (randomChance == randomChance2)
 					{
@@ -91,7 +97,12 @@ public class Wave {
 						/* Allow for future adverts height */
 						final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
 						
-						base.loadNewEnemy(xPos, yPos);
+						if ( (difficultyChance == randomChance) && (Wave.sWaveNumber > 5) )
+						{
+							base.loadNewEnemy(xPos, yPos, 2);
+						}
+						else
+							base.loadNewEnemy(xPos, yPos, 1);
 					}
 					if (base.sEnemyCount == Wave.sNumberEnemysToSpawn)
 					{

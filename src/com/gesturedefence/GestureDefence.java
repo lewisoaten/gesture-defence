@@ -84,7 +84,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private Texture newEnemyTexture;
 	private TiledTextureRegion sEnemyTextureRegion;
-	public int sEnemyCount = 0;
 	
 	private Texture mCastleTexture;
 	private TextureRegion mCastleTextureRegion;
@@ -93,14 +92,18 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private HUD hud;
 	private static ChangeableText sMoneyText;
-	public int sMoney = 0; //This is the amount of cash so far
 	
-	public int sKillCount = 0;
-	public int sPreviousKillCount = 0;
 	public Wave theWave;
 	
 	public boolean sEndWaveActive = false; //Remove?
+	
+	/* These need to be reset/loaded for each game */
 	public int sPreviousWaveNum = 0;
+	public int sKillCount = 0;
+	public int sPreviousKillCount = 0;
+	public int sMoney = 0; //This is the amount of cash so far
+	public int sEnemyCount = 0;
+	// ------
 	
 	public ScreenManager sm;
 	
@@ -297,12 +300,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public boolean ButtonPress(int ButtonID) {
 		switch(ButtonID) {
 		case 1:
-			/* DO some start game code at some point */
-			//GestureDefence.sMainScreen.clearChildScene();
-			
-			//GestureDefence.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
-			//GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
-			
+			/* DO some start game code at some point */			
 			GestureDefence.this.sm.NewWaveScreen();
 			
 			GestureDefence.this.sm.NewWaveScene.registerUpdateHandler(new TimerHandler(3.0f, true, new ITimerCallback()
@@ -310,9 +308,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				@Override
 				public void onTimePassed(final TimerHandler pTimerHandler)
 				{
-					//GestureDefence.sMainScreen.clearChildScene();
 					GestureDefence.this.sm.NewWaveScene.unregisterUpdateHandler(pTimerHandler);
-					//GestureDefence.this.getEngine().setScene(GestureDefence.this.sm.GameScreen);
 					GestureDefence.this.sm.GameScreen();
 					GestureDefence.this.theWave.startNewWave();
 				}
@@ -320,21 +316,17 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			return true;
 		case 3:
 			/* Start the next wave */
-			//GestureDefence.sMainScreen.clearChildScene();
 			GestureDefence.this.theWave.NextWave();
 			GestureDefence.this.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
-			//GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
 			GestureDefence.this.sm.NewWaveScreen();
 			GestureDefence.this.sm.NewWaveScene.registerUpdateHandler(new TimerHandler(4.0f, true, new ITimerCallback()
 			{
 				@Override
 				public void onTimePassed(final TimerHandler pTimerHandler)
 				{
-					//GestureDefence.sMainScreen.clearChildScene();
 					GestureDefence.this.sm.NewWaveScene.unregisterUpdateHandler(pTimerHandler);
 					GestureDefence.this.sm.GameScreen();
 					GestureDefence.this.theWave.startNewWave();
-					//GestureDefence.sEndWaveActive = false;
 				}
 			}));
 			return true;
@@ -388,32 +380,39 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public void loadCastle(float X, float Y) {
 		GestureDefence.this.sCastle = new Castle(X, Y, this.mCastleTextureRegion);
+		GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
 		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
-		
-		this.hud = new HUD();
-		sCastleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, mFont, "XXXXXX", "XXXXXX".length());
-		this.hud.getLastChild().attachChild(sCastleHealth);
-		GestureDefence.sCamera.setHUD(hud);
-		
-		updateCastleHealth();
 	}
 	
-	public void loadCashValue()
+	public void loadHud()
 	{
-		sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont, "" + sMoney, "XXXXXX".length());
-		this.hud.getLastChild().attachChild(sMoneyText);
+		if (this.hud == null)
+		{
+			this.hud = new HUD();
+			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, mFont, "XXXXXX", "XXXXXX".length());
+			this.hud.getLastChild().attachChild(sCastleHealth);
+			GestureDefence.sCamera.setHUD(hud);
+			
+			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont, "" + sMoney, "XXXXXX".length());
+			this.hud.getLastChild().attachChild(sMoneyText);
+		}
 		
+		updateCastleHealth();
 		updateCashValue();
 	}
 	
-	public void loadNewEnemy(float X, float Y) {
+	public void loadNewEnemy(float X, float Y, int type) {
 		final Enemy newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this);
 		/* Note the clone() above,
 		 * without this all sprite's using the same texture will always be on the same frame,
 		 * change one change them all
 		 * This was a 3 hour bitch to find...
 		 * now it creates a clone of the sprite for each enemy,
-		 * this allows each enemy to be its own sprite animation! */
+		 * this allows each enemy to be its own sprite animation! */;
+		 if (type == 2)
+		 {
+			 newEnemy.setScale(1.5f);
+		 }
 		GestureDefence.this.sm.GameScreen.attachChild(newEnemy);
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy);
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true);

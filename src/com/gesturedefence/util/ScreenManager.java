@@ -9,7 +9,10 @@ import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.background.ColorBackground;
 import org.anddev.andengine.entity.sprite.Sprite;
+import org.anddev.andengine.entity.text.ChangeableText;
+import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
+import org.anddev.andengine.util.HorizontalAlign;
 
 import com.gesturedefence.GestureDefence;
 
@@ -20,6 +23,9 @@ public class ScreenManager {
 	public Scene GameScreen;
 	public Scene NewWaveScene;
 	public Scene EndWaveScene;
+	public Scene GameOverScene;
+	
+	private ChangeableText scorebits;
 	
 	public ScreenManager(GestureDefence base)
 	{
@@ -79,7 +85,7 @@ public class ScreenManager {
 			GameScreen.registerUpdateHandler(base.sRemoveStuff);
 			
 			base.loadCastle(base.getCameraWidth() - (base.getCastleTexture().getWidth()), base.getCameraHeight() - 60 - base.getCastleTexture().getHeight());
-			base.loadCashValue();
+			base.loadHud();
 			
 			base.sm.GameScreen.registerUpdateHandler(new IUpdateHandler() {
 				@Override
@@ -159,5 +165,47 @@ public class ScreenManager {
 		base.theWave.mCashAmountItem.setPosition(100, 100);
 		base.theWave.mBuyMenuItem.setPosition(300, 200);
 		base.getEngine().setScene(EndWaveScene);
+	}
+	
+	public void GameOverScreen()
+	{
+		if (GameOverScene == null)
+		{
+			GameOverScene = new Scene(1);
+			
+			Text gameOverText = new Text(base.getCameraWidth() / 2, base.getCameraHeight() / 2, base.mFont, "GAME OVER!", HorizontalAlign.CENTER) {
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.getEngine().setScene(MainMenu);
+					base.theWave.setWaveNumber(1);
+					base.sKillCount = 0;
+					base.sPreviousKillCount = 0;
+					base.sPreviousWaveNum = 0;
+					base.sMoney = 0;
+					base.sEnemyCount = 0;
+					base.updateCashValue();
+					base.sCastle.increaseHealth(3000);
+					base.updateCastleHealth();
+					
+					/*remove all sprite's still in the game (enemies etc)
+					 * This needs optimising, like making it only remove enemies!
+					 */
+					base.sm.GameScreen.detachChildren();
+					
+					//Reload the castle, since it has now been removed
+					base.loadCastle(base.getCameraWidth() - (base.getCastleTexture().getWidth()), base.getCameraHeight() - 60 - base.getCastleTexture().getHeight());
+					
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			scorebits = new ChangeableText(gameOverText.getX() - gameOverText.getWidth(), gameOverText.getY() + gameOverText.getHeight(), base.mFont, "Kills = " + base.sKillCount + ", cash = " + base.sMoney);
+			GameOverScene.attachChild(gameOverText);
+			GameOverScene.attachChild(scorebits);
+			GameOverScene.registerTouchArea(gameOverText);
+		}		
+		
+		scorebits.setText("Kills = " + base.sKillCount + ", cash = " + base.sMoney); 
+		base.getEngine().setScene(GameOverScene);
 	}
 }
