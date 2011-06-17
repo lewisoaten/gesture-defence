@@ -67,45 +67,6 @@ public class Wave {
 	// Methods
 	// ========================================
 		
-//		public MenuScene createStartWaveScreen(Font theFont)
-//		{
-//			/* Passing in the font fixes buggy text problems */
-//			MenuScene theScene = new MenuScene(GestureDefence.sCamera);
-//			
-//			mWaveNumberMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_WAVE_NUMBER, theFont, "WAVE : X", "WAVE : X".length());
-//			theScene.addMenuItem(mWaveNumberMenuItem);
-//
-//			theScene.buildAnimations();
-//			theScene.setBackgroundEnabled(false);
-//			
-//			return theScene;
-//		}
-//		
-//		public MenuScene createEndWaveScreen(Font theFont)
-//		{
-//			/* Passing in the font fixes buggy text problems */
-//			MenuScene theScene = new MenuScene(GestureDefence.sCamera);
-//			
-//			mCashAmountItem = new ChangeableTextMenuItem(GestureDefence.MENU_CASH, theFont, "CASH : XXXXXXX", "CASH : XXXXXXX".length());
-//			theScene.addMenuItem(mCashAmountItem);
-//			
-//			mBuyMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_HEALTH, theFont, "Health : XXXXXX", "Health : XXXXXX".length());
-//			theScene.addMenuItem(mBuyMenuItem);
-//			
-//			final IMenuItem buyHealth = new ColorMenuItemDecorator(new TextMenuItem(GestureDefence.MENU_BUY_HEALTH, theFont, "BUY 100 HEALTH = 100 Cash"), 1.0f,0.0f,0.0f,1.0f,1.0f,1.0f);
-//			buyHealth.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-//			theScene.addMenuItem(buyHealth);
-//			
-//			final IMenuItem startNext = new ColorMenuItemDecorator(new TextMenuItem(GestureDefence.MENU_START_NEXT_WAVE, theFont, "Start Next Wave"), 1.0f,0.0f,0.0f,1.0f,1.0f,1.0f);
-//			buyHealth.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-//			theScene.addMenuItem(startNext);
-//
-//			theScene.buildAnimations();
-//			theScene.setBackgroundEnabled(true);
-//			
-//			return theScene;
-//		}
-		
 		public boolean startNewWave()
 		{
 			@SuppressWarnings("unused")

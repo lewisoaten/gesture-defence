@@ -70,8 +70,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public static Camera sCamera;
 	
-	//public static Scene sMainScreen;
-	
 	public EntityDetachRunnablePoolUpdateHandler sRemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
 	private Texture mAutoParallaxBackgroundTexture;
@@ -83,11 +81,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private Texture mFontTexture;
 	public Font mFont;
-	
-	//protected MenuScene mMenuScene;
-	//protected MenuScene inGameMenu;
-	//protected MenuScene mNewWave;
-	//protected MenuScene mWaveComplete;
 	
 	private Texture newEnemyTexture;
 	private TiledTextureRegion sEnemyTextureRegion;
@@ -270,45 +263,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		}));
 		
 		return loadScene;
-		
-		/* OLD CODE TOO BE REMOVED ONCE CHECKED */
-		
-//		this.mMenuScene = this.createMenuScene(0);
-//		this.inGameMenu = this.createMenuScene(1);
-//		
-//		//final Scene scene = new Scene(1);
-//		GestureDefence.sMainScreen = new Scene(1);
-//		
-//		/* Setup the scrolling background, can be removed, was just trying it out */
-//		final AutoParallaxBackground autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 5);
-//		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - this.mParallaxLayerBack.getHeight(), this.mParallaxLayerBack)));
-//		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0, 80, this.mParallaxLayerFront)));
-//		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-10.0f, new Sprite(35, 62, this.mParallaxLayerFront)));
-//		GestureDefence.sMainScreen.setBackground(autoParallaxBackground);
-//		/* End of scrolling Background */
-//		
-//		/* Load the main menu on startup */
-//		GestureDefence.sMainScreen.setChildScene(this.mMenuScene, false, false, false);
-//		
-//		GestureDefence.sRemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
-//		GestureDefence.sMainScreen.registerUpdateHandler(sRemoveStuff);
-//		
-//		GestureDefence.sMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
-//		
-//		/* Wave setup stuff */
-//		
-//		theWave = new Wave();
-//		this.mNewWave = theWave.createStartWaveScreen(this.mFont);
-//		this.mNewWave.setOnMenuItemClickListener(this);
-//		this.mWaveComplete = theWave.createEndWaveScreen(this.mFont);
-//		this.mWaveComplete.setOnMenuItemClickListener(this);
-//		
-//		/* End of Wave setup stuff */
-//		
-//		return GestureDefence.sMainScreen;
-		
-		/* END OF OLD CODE SECTION */
-		//return scene;
 	}
 	
 	@Override
@@ -321,15 +275,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		/* Menu key pressed, load in-game menu */
 		if(pKeyCode == KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{
-			//if(GestureDefence.sMainScreen.hasChildScene())
-			//{
-				//this.inGameMenu.back();
-			//}
-			//else
-			//{
-				//GestureDefence.sMainScreen.setChildScene(this.inGameMenu, false, true, true);
-			//}
-		return true;
+			return true;
 		}
 		else
 		{
@@ -340,94 +286,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	@Override
 	public boolean onMenuItemClicked(final MenuScene pMenuScene, final IMenuItem pMenuItem, final float pMenuItemLocalX, final float pMenuItemLocalY) {
-//		switch(pMenuItem.getID()) {
-//			case MENU_START:
-//				/* DO some start game code at some point */
-//				GestureDefence.sMainScreen.clearChildScene();
-//				
-//				GestureDefence.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
-//				GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
-//				
-//				GestureDefence.sMainScreen.registerUpdateHandler(new TimerHandler(3.0f, true, new ITimerCallback()
-//				{
-//					@Override
-//					public void onTimePassed(final TimerHandler pTimerHandler)
-//					{
-//						GestureDefence.sMainScreen.clearChildScene();
-//						GestureDefence.sMainScreen.unregisterUpdateHandler(pTimerHandler);
-//						GestureDefence.theWave.startNewWave(GestureDefence.this);
-//					}
-//				}));
-//
-//				this.loadCastle(CAMERA_WIDTH - (mCastleTexture.getWidth()), CAMERA_HEIGHT - 60 - mCastleTexture.getHeight());
-//				
-//				this.loadCashValue();
-//				
-//				GestureDefence.sMainScreen.registerUpdateHandler(new IUpdateHandler() {
-//					@Override
-//					public void onUpdate(float pSecondsElapsed) {
-//						/* On every update */
-//						if (GestureDefence.sPreviousWaveNum != GestureDefence.theWave.getWaveNumber() && GestureDefence.sKillCount != GestureDefence.sPreviousKillCount)
-//							if ((GestureDefence.sKillCount - GestureDefence.sPreviousKillCount) == GestureDefence.theWave.getNumberEnemysToSpawn())
-//							{
-//								/* Oh they all dead */
-//								GestureDefence.theWave.mCashAmountItem.setText("CASH : " + GestureDefence.sMoney);
-//								GestureDefence.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.sCastle.getHealth());
-//								GestureDefence.sMainScreen.setChildScene(mWaveComplete, false, true, true);
-//								//GestureDefence.sEndWaveActive = true;
-//								GestureDefence.sPreviousWaveNum = GestureDefence.theWave.getWaveNumber();
-//								GestureDefence.sPreviousKillCount += GestureDefence.theWave.getNumberEnemysToSpawn();
-//							}
-//					}
-//
-//					@Override
-//					public void reset() {
-//						// TODO Auto-generated method stub
-//						
-//					}
-//				});
-//				
-//				return true;
-//			case MENU_QUIT:
-//				/* Quit's the Game */
-//				this.finish();
-//				return true;
-//			case MENU_RESTART:
-//				/* Restarts the game */
-//				return true;
-//			case MENU_START_NEXT_WAVE:
-//				/* Start the next wave */
-//				GestureDefence.sMainScreen.clearChildScene();
-//				GestureDefence.theWave.NextWave();
-//				GestureDefence.theWave.mWaveNumberMenuItem.setText("WAVE : " + theWave.getWaveNumber());
-//				GestureDefence.sMainScreen.setChildScene(this.mNewWave, false, false, false);
-//				GestureDefence.sMainScreen.registerUpdateHandler(new TimerHandler(4.0f, true, new ITimerCallback()
-//				{
-//					@Override
-//					public void onTimePassed(final TimerHandler pTimerHandler)
-//					{
-//						GestureDefence.sMainScreen.clearChildScene();
-//						GestureDefence.sMainScreen.unregisterUpdateHandler(pTimerHandler);
-//						GestureDefence.theWave.startNewWave(GestureDefence.this);
-//						//GestureDefence.sEndWaveActive = false;
-//					}
-//				}));
-//				return true;
-//			case MENU_BUY_HEALTH:
-//				/* Buying 100 health */
-//				if (sMoney - 100 >= 0)
-//				{
-//					sMoney -= 100;
-//					sCastle.increaseHealth(100);
-//					GestureDefence.theWave.mCashAmountItem.setText("CASH : " + sMoney);
-//					GestureDefence.theWave.mBuyMenuItem.setText("HEALTH : " + sCastle.getHealth());
-//					GestureDefence.updateCashValue();
-//					GestureDefence.updateCastleHealth();
-//				}
-//				return true;
-//			default:
-//				return false;
-//		}
 		return true;
 	}
 	
