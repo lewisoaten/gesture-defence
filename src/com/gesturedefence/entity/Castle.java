@@ -1,7 +1,8 @@
 package com.gesturedefence.entity;
 
 /**
- * Author: Mike Since: 14:20:32 - 15 Jun 2011
+ * @author Michael Watts
+ * @since 14:20:32 - 15 Jun 2011
  */
 
 import org.anddev.andengine.entity.sprite.Sprite;

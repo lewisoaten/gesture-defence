@@ -1,7 +1,8 @@
 package com.gesturedefence.entity;
 
 /**
- * Author: Mike Since: 12:05:40 - 15 Jun 2011
+ * @author Michael Watts
+ * @since 12:05:40 - 15 Jun 2011
  */
 
 import org.anddev.andengine.engine.handler.physics.PhysicsHandler;
@@ -24,6 +25,8 @@ public class Enemy extends AnimatedSprite {
 	// Fields
 	// ========================================
 	
+		private GestureDefence base;
+		
 		private final PhysicsHandler mPhysicsHandler;
 		private TimerHandler mTimeMoved;
 		
@@ -52,11 +55,12 @@ public class Enemy extends AnimatedSprite {
 	// Constructors
 	// ========================================
 	
-		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion)
+		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion, GestureDefence base)
 		{
 			super(pX, pY, pTiledTextureRegion);
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
+			this.base = base;
 		}
 	
 	// ========================================
@@ -66,11 +70,7 @@ public class Enemy extends AnimatedSprite {
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
 	// ========================================
-	
-	// ========================================
-	// Methods
-	// ========================================
-			
+		
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed)
 		{
@@ -88,17 +88,17 @@ public class Enemy extends AnimatedSprite {
 					/* Add value of enemy to current cash amount
 					 * Then update it
 					 * Also increase global kill count */
-					GestureDefence.sMoney += this.mCashWorth;
-					GestureDefence.updateCashValue();
-					GestureDefence.sKillCount++;
+					base.sMoney += this.mCashWorth;
+					base.updateCashValue();
+					base.sKillCount++;
 					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal
 					 * recommenced by andengine author */
-					final EntityDetachRunnablePoolItem pPoolItem = GestureDefence.sRemoveStuff.obtainPoolItem();
+					final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
 					//Use set, NOT setEntity, if no parent null pointer exception!
 					pPoolItem.set(this,this.getParent());
-					GestureDefence.sRemoveStuff.postPoolItem(pPoolItem);					
+					base.sRemoveStuff.postPoolItem(pPoolItem);					
 				}
 			}
 			else
@@ -109,7 +109,7 @@ public class Enemy extends AnimatedSprite {
 					{
 						//Do ONE set of damage when the frame is in the right place (animation frame)
 						Castle.damageCastle(this.mAttackDamage);
-						GestureDefence.updateCastleHealth();
+						base.updateCastleHealth();
 						this.mAttackedTheCastle = true;
 					}
 					if (this.getCurrentTileIndex() != 5 && this.mAttackedTheCastle)
@@ -129,10 +129,10 @@ public class Enemy extends AnimatedSprite {
 							lastSetAnimation = 2;
 						}					
 						
-						if(this.mX > (GestureDefence.CAMERA_WIDTH - this.getWidth()))
+						if(this.mX > (base.getCameraWidth() - this.getWidth()))
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.mX = (GestureDefence.CAMERA_WIDTH - this.getWidth());
+							this.mX = (base.getCameraWidth() - this.getWidth());
 						}
 						if(this.mX < (0.0f + this.getWidth()))
 						{
@@ -159,7 +159,7 @@ public class Enemy extends AnimatedSprite {
 					else
 					{
 						// Non airborne code!
-						if(this.mX < (GestureDefence.CAMERA_WIDTH - 160) && this.mY >= this.mInitialY)
+						if(this.mX < (base.getCameraWidth() - 160) && this.mY >= this.mInitialY)
 						{
 							this.mPhysicsHandler.setVelocityX(mSpeed);
 							if(lastSetAnimation != 1)
@@ -168,10 +168,10 @@ public class Enemy extends AnimatedSprite {
 								lastSetAnimation = 1;
 							}
 						} 
-						else if(this.mX + this.getWidth() > (GestureDefence.CAMERA_WIDTH - 160))
+						else if(this.mX + this.getWidth() > (base.getCameraWidth() - 160))
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition(GestureDefence.CAMERA_WIDTH - 160 + (this.getWidth() / 2), this.mY);
+							this.setPosition(base.getCameraWidth() - 160 + (this.getWidth() / 2), this.mY);
 							if(lastSetAnimation != 3)
 							{
 								/* Attacking Castle
@@ -203,22 +203,6 @@ public class Enemy extends AnimatedSprite {
 				}
 			}				
 			super.onManagedUpdate(pSecondsElapsed);
-		}
-		
-		public boolean isEnemyDead()
-		{
-			if(this.mHealth < 0.0f)
-			{
-				return true;
-			}
-			else
-				return false;
-		}
-		
-		public void EnemySubtractHealth()
-		{
-			this.mHealth -= (mGroundHitSpeed / 3);
-			mGroundHitSpeed = 0;
 		}
 		
 		@Override
@@ -277,6 +261,26 @@ public class Enemy extends AnimatedSprite {
 					break;
 			}
 			return true;
+		}
+	
+	// ========================================
+	// Methods
+	// ========================================
+		
+		public boolean isEnemyDead()
+		{
+			if(this.mHealth < 0.0f)
+			{
+				return true;
+			}
+			else
+				return false;
+		}
+		
+		public void EnemySubtractHealth()
+		{
+			this.mHealth -= (mGroundHitSpeed / 3);
+			mGroundHitSpeed = 0;
 		}
 	
 	// ========================================

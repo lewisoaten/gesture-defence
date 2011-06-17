@@ -5,7 +5,8 @@ import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.opengl.font.Font;
 
 /**
- * Author: Mike Since: 19:28:21 - 15 Jun 2011
+ * @author Michael Watts
+ * @since: 19:28:21 - 15 Jun 2011
  */
 
 
