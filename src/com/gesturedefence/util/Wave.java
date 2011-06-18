@@ -36,8 +36,9 @@ public class Wave {
 		{
 			Wave.sWaveNumber = 1;
 			this.base = base;
-			this.mCashAmountItem = new ChangeableTextMenuItem(base.MENU_CASH, base.mFont, "CASH : XXXXXXX", "CASH : XXXXXXX".length());
-			this.mBuyMenuItem = new ChangeableTextMenuItem(base.MENU_HEALTH, base.mFont, "Health : XXXXXX", "Health : XXXXXX".length());
+			this.mCashAmountItem = new ChangeableTextMenuItem(base.MENU_CASH, base.mFont2, "CASH : XXXXXXX", "CASH : XXXXXXX".length());
+			this.mBuyMenuItem = new ChangeableTextMenuItem(base.MENU_HEALTH, base.mFont2, "Health : XXXXXX / XXXXXX", "Health : XXXXXX / XXXXXX".length());
+			this.mWaveNumberMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_WAVE_NUMBER, base.mFont, "WAVE : XXXX", ("WAVE : XXXX").length());
 		}
 	
 	// ========================================
@@ -97,7 +98,7 @@ public class Wave {
 						/* Allow for future adverts height */
 						final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
 						
-						if ( (difficultyChance == randomChance) && (Wave.sWaveNumber > 5) )
+						if ( (difficultyChance == randomChance) && (Wave.sWaveNumber >= 5) )
 						{
 							base.loadNewEnemy(xPos, yPos, 2);
 						}

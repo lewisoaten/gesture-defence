@@ -14,6 +14,8 @@ import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.util.HorizontalAlign;
 
+import android.widget.Toast;
+
 import com.gesturedefence.GestureDefence;
 
 public class ScreenManager {
@@ -24,6 +26,7 @@ public class ScreenManager {
 	public Scene NewWaveScene;
 	public Scene EndWaveScene;
 	public Scene GameOverScene;
+	public Scene PauseScreen;
 	
 	private ChangeableText scorebits;
 	
@@ -65,10 +68,21 @@ public class ScreenManager {
 				}
 			};
 			
+			Text LOADGame = new Text(10, 10, base.mFont2, "Load Game Save")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.loadSaveFile();					
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			MainMenu.attachChild(startButton);
 			MainMenu.attachChild(quitButton);
+			MainMenu.attachChild(LOADGame);
 			MainMenu.registerTouchArea(startButton);
 			MainMenu.registerTouchArea(quitButton);
+			MainMenu.registerTouchArea(LOADGame);
 			MainMenu.setTouchAreaBindingEnabled(true);
 		}
 		
@@ -96,8 +110,7 @@ public class ScreenManager {
 						{
 							/* Oh they all dead */
 							base.theWave.mCashAmountItem.setText("CASH : " + base.sMoney);
-							base.theWave.mBuyMenuItem.setText("HEALTH : " + base.sCastle.getHealth());
-							//GestureDefence.sMainScreen.setChildScene(mWaveComplete, false, true, true);
+							base.theWave.mBuyMenuItem.setText("HEALTH : " + base.sCastle.getCurrentHealth() + "/ " + base.sCastle.getMaxHealth());
 							base.sm.EndWaveScreen();
 							base.sEndWaveActive = true;
 							base.sPreviousWaveNum = base.theWave.getWaveNumber();
@@ -154,16 +167,38 @@ public class ScreenManager {
 				}
 			};
 			
+			Text increaseMaxHealth = new Text(100, 300, base.mFont, "Increase Max Health")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.ButtonPress(7);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			Text saveGame = new Text(100, 250, base.mFont, "Save Game")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.savegame();					
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			EndWaveScene.attachChild(base.theWave.mCashAmountItem);
 			EndWaveScene.attachChild(base.theWave.mBuyMenuItem);
 			EndWaveScene.attachChild(buyButton);
 			EndWaveScene.registerTouchArea(buyButton);
+			EndWaveScene.attachChild(increaseMaxHealth);
+			EndWaveScene.registerTouchArea(increaseMaxHealth);
 			EndWaveScene.attachChild(NextWaveButton);
 			EndWaveScene.registerTouchArea(NextWaveButton);
+			EndWaveScene.attachChild(saveGame);
+			EndWaveScene.registerTouchArea(saveGame);
 		}
 		
 		base.theWave.mCashAmountItem.setPosition(100, 100);
-		base.theWave.mBuyMenuItem.setPosition(300, 200);
+		base.theWave.mBuyMenuItem.setPosition(100, 160);
 		base.getEngine().setScene(EndWaveScene);
 	}
 	
@@ -182,9 +217,11 @@ public class ScreenManager {
 					base.sPreviousKillCount = 0;
 					base.sPreviousWaveNum = 0;
 					base.sMoney = 0;
+					base.mMoneyEarned = 0;
 					base.sEnemyCount = 0;
 					base.updateCashValue();
 					base.sCastle.increaseHealth(3000);
+					base.sCastle.setMaxHealth(3000);
 					base.updateCastleHealth();
 					
 					/*remove all sprite's still in the game (enemies etc)
@@ -199,7 +236,7 @@ public class ScreenManager {
 				}
 			};
 			
-			scorebits = new ChangeableText(gameOverText.getX() - gameOverText.getWidth(), gameOverText.getY() + gameOverText.getHeight(), base.mFont, "Kills = " + base.sKillCount + ", cash = " + base.sMoney);
+			scorebits = new ChangeableText(gameOverText.getX() - gameOverText.getWidth(), gameOverText.getY() + gameOverText.getHeight(), base.mFont, "Kills = " + base.sKillCount + ", cash = " + base.mMoneyEarned);
 			GameOverScene.attachChild(gameOverText);
 			GameOverScene.attachChild(scorebits);
 			GameOverScene.registerTouchArea(gameOverText);
@@ -207,5 +244,27 @@ public class ScreenManager {
 		
 		scorebits.setText("Kills = " + base.sKillCount + ", cash = " + base.sMoney); 
 		base.getEngine().setScene(GameOverScene);
+	}
+	
+	public void loadPauseScreen()
+	{
+		if (PauseScreen == null)
+		{
+			PauseScreen = new Scene(1);
+			
+			Text someText = new Text( (base.getCameraWidth() / 2) - 10, (base.getCameraHeight() / 2) - 10, base.mFont, "PAUSED")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.sm.GameScreen();
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			PauseScreen.registerTouchArea(someText);
+			PauseScreen.attachChild(someText);
+		}		
+		
+		base.getEngine().setScene(PauseScreen);
 	}
 }

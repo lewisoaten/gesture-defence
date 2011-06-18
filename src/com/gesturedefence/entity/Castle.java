@@ -21,6 +21,7 @@ public class Castle extends Sprite {
 	// ========================================
 	
 		private static float mHealth = 3000.0f; //The amount of health the castle has to start with
+		private static float mMaxHealth = 3000.0f; //The maximum amount of health the castle can have
 		private static GestureDefence base;
 	
 	// ========================================
@@ -40,15 +41,43 @@ public class Castle extends Sprite {
 			Castle.base = base;
 		}
 		
-		public int getHealth()
+		public int getCurrentHealth()
 		{
 			return (int) Castle.mHealth;
 		}
 		
+		public void setCurrentHealth(int amount)
+		{
+			Castle.mHealth = amount;
+		}
+		
+		public int getMaxHealth()
+		{
+			return (int) Castle.mMaxHealth;
+		}
+		
 		public boolean increaseHealth(int amount)
 		{
-			Castle.mHealth += amount;
+			if ( (Castle.mHealth + amount) <= Castle.mMaxHealth)
+			{
+				Castle.mHealth += amount;
+			}
+			else
+			{
+				Castle.mHealth = Castle.mMaxHealth;
+			}
 			return true;
+		}
+		
+		public boolean increaseMaxHealth(int amount)
+		{
+			Castle.mMaxHealth += amount;
+			return true;
+		}
+		
+		public void setMaxHealth(int amount)
+		{
+			Castle.mMaxHealth = amount;
 		}
 	
 	// ========================================

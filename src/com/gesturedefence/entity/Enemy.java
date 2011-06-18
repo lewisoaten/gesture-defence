@@ -30,7 +30,7 @@ public class Enemy extends AnimatedSprite {
 		private final PhysicsHandler mPhysicsHandler;
 		private TimerHandler mTimeMoved;
 		
-		private float mSpeed = MathUtils.random(0.5f,25.0f); //Each enemy is given a random speed when they are created (need to move min and max values to global variables!
+		private float mSpeed = 0.0f; //Each enemy is given a random speed when they are created (need to move min and max values to global variables!
 		private float mGravity = 9.86f; //Gravity value for velocity, may move to global variable, 1 enemy = no problem, 2+ enemies = need global gravity
 		private float mMoveDelay = 0.0f; //Used to store how long enemy was dragged
 		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
@@ -40,27 +40,51 @@ public class Enemy extends AnimatedSprite {
 		private boolean mTimerHandler = false; //Used to track how long they were moved for
 		
 		private boolean mIsAirbourne = false; //Is the enemy airborne? (were they dragged up!)
-		private int lastSetAnimation = 0; //0 = none, 1 = running, 2 = falling, 3 = death
+		private int lastSetAnimation = 0; //0 = none, 1 = running, 2 = falling, 3 = death, 4 = attacking, 5 = tripping
 		
-		private float mHealth = 300.0f; //The amount of health the enemy has to start with
+		private float mHealth = 0.0f; //The amount of health the enemy has to start with
 		private boolean mSetDeathAnimation = false; //Used to get death animation working properly
 		
 		private boolean mCanAttackCastle = false; //Used for attacking castle
-		private float mAttackDamage = 10.0f; //The amount of damage each attack does to the castle
+		private float mAttackDamage = 0.0f; //The amount of damage each attack does to the castle
 		private boolean mAttackedTheCastle = false; //Used to prevent enemy's doing loads of damage (caused by the period the frame is shown)
 		
-		protected int mCashWorth = 40; //The amount each kill of this enemy is worth
+		protected int mCashWorth = 0; //The amount each kill of this enemy is worth
+		
+		private int mEnemyType = 0;
+		
+		private boolean mTripping = false;
 	
 	// ========================================
 	// Constructors
 	// ========================================
 	
-		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion, GestureDefence base)
+		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion, GestureDefence base, int type)
 		{
 			super(pX, pY, pTiledTextureRegion);
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
 			this.base = base;
+			
+			switch (type) {
+			case 1:
+				this.mCashWorth = 40;
+				this.mAttackDamage = 10.0f;
+				this.mHealth = 300.0f;
+				this.mSpeed = MathUtils.random(0.5f,25.0f);
+				this.mEnemyType = 1;
+				break;
+			case 2:
+				this.mCashWorth = 150;
+				this.mAttackDamage = 100.0f;
+				this.mHealth = 670.0f;
+				this.mSpeed = MathUtils.random(18.0f,33.0f);
+				this.mEnemyType = 2;
+				break;
+				
+			default:
+				break;
+			}
 		}
 	
 	// ========================================
@@ -80,7 +104,9 @@ public class Enemy extends AnimatedSprite {
 				{
 					this.stopAnimation();
 					this.mPhysicsHandler.setEnabled(false);
-					this.animate(new long[] {200, 200, 200}, new int[] {3, 4, 5}, 0);
+					this.base.sm.GameScreen.unregisterTouchArea(this);
+					this.animate(new long[] {200, 200, 200}, new int[] {6, 7, 8}, 0);
+					this.lastSetAnimation = 3;
 					this.mSetDeathAnimation = true;
 				}
 				else if (this.isAnimationRunning() == false)
@@ -89,43 +115,59 @@ public class Enemy extends AnimatedSprite {
 					 * Then update it
 					 * Also increase global kill count */
 					base.sMoney += this.mCashWorth;
+					base.mMoneyEarned += this.mCashWorth;
 					base.updateCashValue();
 					base.sKillCount++;
 					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal
-					 * recommenced by andengine author */
+					 * recommended by andengine author */
 					final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
-					//Use set, NOT setEntity, if no parent null pointer exception!
+					//Use set, NOT setEntity, if no parent, null pointer exception!
 					pPoolItem.set(this,this.getParent());
 					base.sRemoveStuff.postPoolItem(pPoolItem);					
 				}
 			}
 			else
 			{
+				if (this.mTripping)
+				{
+					if (this.lastSetAnimation != 5)
+					{
+						this.animate(new long[] {150,150,250, 150, 150}, new int[] {9, 10, 11, 10, 9}, 0);
+						this.lastSetAnimation = 5;
+					}
+					else if (this.isAnimationRunning() == false)
+					{
+						this.mTripping = false;
+						this.mPhysicsHandler.setEnabled(true);
+					}
+				}
+				
 				if (this.mCanAttackCastle)
 				{
-					if (this.getCurrentTileIndex() == 5 && this.mAttackedTheCastle == false)
+					if (this.getCurrentTileIndex() == 4 && this.mAttackedTheCastle == false)
 					{
 						//Do ONE set of damage when the frame is in the right place (animation frame)
 						Castle.damageCastle(this.mAttackDamage);
 						base.updateCastleHealth();
 						this.mAttackedTheCastle = true;
 					}
-					if (this.getCurrentTileIndex() != 5 && this.mAttackedTheCastle)
+					if (this.getCurrentTileIndex() != 4 && this.mAttackedTheCastle)
 					{
 						//Prevents the damage being done in overzealous amounts (ONCE per the frame)  
 						this.mAttackedTheCastle = false;
 					}
 				}
+				
 				if(this.mPhysicsHandler.isEnabled())
-				{					
+				{
 					if (this.mIsAirbourne == true)
 					{
 						//Airborne code
 						if (lastSetAnimation != 2)
 						{
-							this.animate(new long[] {200,0}, 3, 4, true);
+							this.animate(new long[] {200,0}, 6, 7, true);
 							lastSetAnimation = 2;
 						}					
 						
@@ -148,7 +190,10 @@ public class Enemy extends AnimatedSprite {
 							EnemySubtractHealth();
 							
 							this.mPhysicsHandler.setVelocityY(0.0f);
+							this.mPhysicsHandler.setVelocityX(0.0f);
 							this.setPosition(this.mX, this.mInitialY);
+							this.mTripping = true;
+							this.mPhysicsHandler.setEnabled(false);
 						}
 						else if(this.mY < this.mInitialY)
 						{
@@ -172,12 +217,11 @@ public class Enemy extends AnimatedSprite {
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
 							this.setPosition(base.getCameraWidth() - 160 + (this.getWidth() / 2), this.mY);
-							if(lastSetAnimation != 3)
+							if(lastSetAnimation != 4)
 							{
-								/* Attacking Castle
-								 * Using wrong animation, this is all testing */
-								this.animate(new long[] {200,200}, 4, 5, true);
-								lastSetAnimation = 3;
+								/* Attacking Castle animation */
+								this.animate(new long[] {200,200,200}, 3, 5, true);
+								lastSetAnimation = 4;
 								this.mCanAttackCastle = true;
 							}
 						}
@@ -232,9 +276,13 @@ public class Enemy extends AnimatedSprite {
 				case TouchEvent.ACTION_MOVE:
 					if(pSceneTouchEvent.getY() - this.getHeight() / 2 < mInitialY)
 					{
-						this.setPosition(pSceneTouchEvent.getX() - this.getWidth() / 2, pSceneTouchEvent.getY() - this.getHeight() / 2);
-						if (this.mIsAirbourne == false)
-							this.mIsAirbourne = true;
+						//Only move the enemy if the finger is moved further than a XX (allows for touch enemy, tripping)
+						if (pSceneTouchEvent.getY() - this.mInitialY < -5.0f)
+						{
+							this.setPosition(pSceneTouchEvent.getX() - this.getWidth() / 2, pSceneTouchEvent.getY() - this.getHeight() / 2);
+							if (this.mIsAirbourne == false)
+								this.mIsAirbourne = true;
+						}
 					}
 					else
 					{
@@ -252,9 +300,19 @@ public class Enemy extends AnimatedSprite {
 						float mVelocityX = mDiffX * 10;
 						float mVelocityY = mDiffY * 10;
 						
-						this.mPhysicsHandler.setEnabled(true);						
-						this.mPhysicsHandler.setVelocityX(mVelocityX * mMoveDelay * 10);
-						this.mPhysicsHandler.setVelocityY(mVelocityY * mMoveDelay * 10);
+						//Check to see how far it moved, if it didn't move far at all, make them trip up instead
+						if (mDiffY > -10.0f)
+						{
+							mVelocityX = 0;
+							mVelocityY = 0;
+							this.mTripping = true;
+						}
+						else
+						{
+							this.mPhysicsHandler.setEnabled(true);						
+							this.mPhysicsHandler.setVelocityX(mVelocityX * mMoveDelay * 10);
+							this.mPhysicsHandler.setVelocityY(mVelocityY * mMoveDelay * 10);
+						}
 						
 						mTimerHandler = false;
 					}
@@ -269,7 +327,7 @@ public class Enemy extends AnimatedSprite {
 		
 		public boolean isEnemyDead()
 		{
-			if(this.mHealth < 0.0f)
+			if(this.mHealth <= 0.0f)
 			{
 				return true;
 			}

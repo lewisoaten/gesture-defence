@@ -5,7 +5,14 @@ package com.gesturedefence;
  * @since 12:43:16 - 12 Jun 2011
  */
 
-import javax.microedition.khronos.opengles.GL10;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
@@ -22,8 +29,6 @@ import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxE
 import org.anddev.andengine.entity.scene.menu.MenuScene;
 import org.anddev.andengine.entity.scene.menu.MenuScene.IOnMenuItemClickListener;
 import org.anddev.andengine.entity.scene.menu.item.IMenuItem;
-import org.anddev.andengine.entity.scene.menu.item.TextMenuItem;
-import org.anddev.andengine.entity.scene.menu.item.decorator.ColorMenuItemDecorator;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.text.Text;
@@ -39,8 +44,11 @@ import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
+import android.R.integer;
+import android.content.Context;
 import android.graphics.Color;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
@@ -82,8 +90,14 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private Texture mFontTexture;
 	public Font mFont;
 	
+	private Texture mFontTexture2;
+	public Font mFont2;
+	
 	private Texture newEnemyTexture;
 	private TiledTextureRegion sEnemyTextureRegion;
+	
+	private Texture newEnemyTexture2;
+	private TiledTextureRegion sEnemyTextureRegion2;
 	
 	private Texture mCastleTexture;
 	private TextureRegion mCastleTextureRegion;
@@ -102,6 +116,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public int sKillCount = 0;
 	public int sPreviousKillCount = 0;
 	public int sMoney = 0; //This is the amount of cash so far
+	public int mMoneyEarned = 0; //Total cash earned throughout the game
 	public int sEnemyCount = 0;
 	// ------
 	
@@ -224,6 +239,13 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			public void onTimePassed(final TimerHandler pTimerHandler) {
 				loadScene.unregisterUpdateHandler(pTimerHandler);
 				
+				/* Smaller font texture */
+				GestureDefence.this.mFontTexture2 = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				FontFactory.setAssetBasePath("font/");
+				GestureDefence.this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
+				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mFontTexture2);
+				GestureDefence.this.getEngine().getFontManager().loadFont(mFont2);
+				
 				/* Initialise the background images, into scrolling background (parallax background) */
 				GestureDefence.this.mAutoParallaxBackgroundTexture = new Texture(1024, 1024, TextureOptions.DEFAULT);
 				GestureDefence.this.setParallaxLayerBack(TextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this, "gfx/temp_background.png", 0, 0));
@@ -238,8 +260,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				
 				/* New animated Enemy Sprite's */
 				GestureDefence.this.newEnemyTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.sEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(newEnemyTexture, GestureDefence.this, "gfx/new_enemy.png", 0, 0, 3, 2);
-				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.newEnemyTexture);
+				GestureDefence.this.sEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(newEnemyTexture, GestureDefence.this, "gfx/enemy_1.png", 0, 0, 3, 4);
+				GestureDefence.this.newEnemyTexture2 = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.sEnemyTextureRegion2 = TextureRegionFactory.createTiledFromAsset(newEnemyTexture2, GestureDefence.this, "gfx/enemy_2.png", 0, 0, 3, 4);
+				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.newEnemyTexture, GestureDefence.this.newEnemyTexture2);
 				
 				/* Load castle sprite */
 				GestureDefence.this.mCastleTexture = new Texture(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -261,6 +285,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.sMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
 				GestureDefence.this.theWave = new Wave(GestureDefence.this);
 				
+				//Setup the castle, but don't actually attach it yet!
+				GestureDefence.this.sCastle = new Castle(0, 0, GestureDefence.this.mCastleTextureRegion);
+				GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
+				
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -278,6 +306,14 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		/* Menu key pressed, load in-game menu */
 		if(pKeyCode == KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{
+			if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
+			{
+				GestureDefence.this.sm.loadPauseScreen();
+			}
+			else if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.PauseScreen)
+			{
+				GestureDefence.this.sm.GameScreen();
+			}
 			return true;
 		}
 		else
@@ -332,16 +368,28 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			return true;
 		case 5:
 			/* Buying 100 health */
-			if (sMoney - 100 >= 0)
+			if ( (sMoney - 100 >= 0) && (GestureDefence.this.sCastle.getCurrentHealth() < GestureDefence.this.sCastle.getMaxHealth()) )
 			{
 				sMoney -= 100;
 				sCastle.increaseHealth(100);
 				GestureDefence.this.theWave.mCashAmountItem.setText("CASH : " + sMoney);
-				GestureDefence.this.theWave.mBuyMenuItem.setText("HEALTH : " + sCastle.getHealth());
+				GestureDefence.this.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.this.sCastle.getCurrentHealth() + "/ " + GestureDefence.this.sCastle.getMaxHealth());
 				GestureDefence.this.updateCashValue();
 				GestureDefence.this.updateCastleHealth();
 			}
-			return true;			
+			return true;
+		case 7:
+			/* Buying health increase */
+			if (sMoney - 1000 >= 0)
+			{
+				sMoney -= 1000;
+				sCastle.increaseMaxHealth(250);
+				GestureDefence.this.theWave.mCashAmountItem.setText("CASH : " + sMoney);
+				GestureDefence.this.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.this.sCastle.getCurrentHealth() + "/ " + GestureDefence.this.sCastle.getMaxHealth());
+				GestureDefence.this.updateCashValue();
+				GestureDefence.this.updateCastleHealth();
+			}
+			return true;
 		case 99:
 			/* Quits the Game */
 			this.finish();
@@ -351,36 +399,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		}
 	}
 	
-	protected MenuScene createMenuScene(int whatMenu) {
-		final MenuScene menuScene = new MenuScene(GestureDefence.sCamera);
-		
-		if (whatMenu == 0)
-		{
-			final IMenuItem startMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_START, mFont, "START"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
-			startMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-			menuScene.addMenuItem(startMenuItem);
-		} else if (whatMenu == 1)
-		{
-			final IMenuItem restartMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_RESTART, mFont, "RESTART"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
-			restartMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-			menuScene.addMenuItem(restartMenuItem);
-		}
-		
-		final IMenuItem quitMenuItem = new ColorMenuItemDecorator(new TextMenuItem(MENU_QUIT, mFont, "QUIT"), 1.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
-		quitMenuItem.setBlendFunction(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-		menuScene.addMenuItem(quitMenuItem);
-
-		menuScene.buildAnimations();
-		
-		menuScene.setBackgroundEnabled(false);
-		
-		menuScene.setOnMenuItemClickListener(this);
-		return menuScene;
-	}
-	
 	public void loadCastle(float X, float Y) {
-		GestureDefence.this.sCastle = new Castle(X, Y, this.mCastleTextureRegion);
-		GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
+		GestureDefence.this.sCastle.setPosition(X, Y);
 		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
 	}
 	
@@ -389,11 +409,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		if (this.hud == null)
 		{
 			this.hud = new HUD();
-			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 100, 0 + 20, mFont, "XXXXXX", "XXXXXX".length());
+			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 200, 0 + 20, mFont2, "XXXXXX / XXXXXX", "XXXXXX / XXXXXX".length());
 			this.hud.getLastChild().attachChild(sCastleHealth);
 			GestureDefence.sCamera.setHUD(hud);
 			
-			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont, "" + sMoney, "XXXXXX".length());
+			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont2, "" + sMoney, "XXXXXX".length());
 			this.hud.getLastChild().attachChild(sMoneyText);
 		}
 		
@@ -402,16 +422,23 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	}
 	
 	public void loadNewEnemy(float X, float Y, int type) {
-		final Enemy newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this);
-		/* Note the clone() above,
-		 * without this all sprite's using the same texture will always be on the same frame,
-		 * change one change them all
-		 * This was a 3 hour bitch to find...
-		 * now it creates a clone of the sprite for each enemy,
-		 * this allows each enemy to be its own sprite animation! */;
-		 if (type == 2)
+		final Enemy newEnemy;
+		/* Note the clone(), without this you get ISSUES! */;
+		 switch(type)
 		 {
-			 newEnemy.setScale(1.5f);
+		 	case 1:
+		 		//Enemy type 1 (standard)
+		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+		 		break;
+		 	case 2:
+		 		//Enemy type 2
+		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion2.clone(), GestureDefence.this, 2);
+				 newEnemy.setScale(1.5f);
+		 		break;
+		 	default:
+		 		//Incase type specified is wrong, default to enemy type 1 texture
+		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+		 		break;
 		 }
 		GestureDefence.this.sm.GameScreen.attachChild(newEnemy);
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy);
@@ -421,12 +448,152 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public void updateCastleHealth()
 	{
-		sCastleHealth.setText("" + GestureDefence.this.sCastle.getHealth());
+		sCastleHealth.setText(GestureDefence.this.sCastle.getCurrentHealth() + " / " + GestureDefence.this.sCastle.getMaxHealth());
 	}
 	
 	public void updateCashValue()
 	{
 		sMoneyText.setText("" + GestureDefence.this.sMoney);
+	}
+	
+	public boolean savegame()
+	{
+		String FILENAME = "save_game_file";
+		
+		try {
+			FileOutputStream fos = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+			OutputStreamWriter output = new OutputStreamWriter(fos);
+			BufferedWriter buf = new BufferedWriter(output);
+			
+			String killCount = "#1:" + GestureDefence.this.sKillCount;
+			String waveNumber = "#2:" + (GestureDefence.this.theWave.getWaveNumber());
+			String currentCash = "#3:" + GestureDefence.this.sMoney;
+			String totalCash = "#4:" + GestureDefence.this.mMoneyEarned;
+			String currentHealth = "#5:" + GestureDefence.this.sCastle.getCurrentHealth();
+			String maxHealth = "#6:" + GestureDefence.this.sCastle.getMaxHealth();
+			String previousKills = "#7:" + GestureDefence.this.sPreviousKillCount;
+			
+			buf.write(killCount);
+			buf.newLine();
+			buf.write(waveNumber);
+			buf.newLine();
+			buf.write(currentCash);
+			buf.newLine();
+			buf.write(totalCash);
+			buf.newLine();
+			buf.write(currentHealth);
+			buf.newLine();
+			buf.write(maxHealth);
+			buf.newLine();
+			buf.write(previousKills);
+			buf.newLine();
+			
+			buf.close();
+			output.close();
+			fos.close();
+			
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Saved!", Toast.LENGTH_LONG).show();
+			
+			return true;
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Save failed. Failed to create file!", Toast.LENGTH_LONG).show();
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Save failed. Conversion errors", Toast.LENGTH_LONG).show();
+			return false;
+		}
+	}
+	
+	public boolean loadSaveFile()
+	{
+		
+		String FILENAME = "save_game_file";
+		String string = "";
+		String killCount = "";
+		String waveNumber = "";
+		String currentCash = "";
+		String totalCash = "";
+		String currentHealth = "";
+		String maxHealth = "";
+		String prevKills = "";
+		
+		try {
+			FileInputStream fis = openFileInput(FILENAME);
+			InputStreamReader inputreader = new InputStreamReader(fis);
+			BufferedReader buffreader = new BufferedReader(inputreader);
+			string = buffreader.readLine();
+			
+			while ( string != null)
+			{
+				// stuff
+				if (string.contains("#1:"))
+				{
+					int pos = string.indexOf(":");
+					killCount = string.substring(pos + 1);
+				}
+				if (string.contains("#2:"))
+				{
+					int pos = string.indexOf(":");
+					waveNumber = string.substring(pos + 1);
+				}
+				if (string.contains("#3:"))
+				{
+					int pos = string.indexOf(":");
+					currentCash = string.substring(pos + 1);
+				}
+				if (string.contains("#4:"))
+				{
+					int pos = string.indexOf(":");
+					totalCash = string.substring(pos + 1);
+				}
+				if (string.contains("#5:"))
+				{
+					int pos = string.indexOf(":");
+					currentHealth = string.substring(pos + 1);
+				}
+				if (string.contains("#6:"))
+				{
+					int pos = string.indexOf(":");
+					maxHealth = string.substring(pos + 1);
+				}
+				if (string.contains("#7:"))
+				{
+					int pos = string.indexOf(":");
+					prevKills = string.substring(pos + 1);
+				}
+				
+				string = buffreader.readLine();
+			}
+			
+			buffreader.close();
+			inputreader.close();
+			fis.close();
+			
+			GestureDefence.this.sKillCount = Integer.parseInt(killCount);
+			GestureDefence.this.sPreviousKillCount = Integer.parseInt(prevKills);
+			GestureDefence.this.theWave.setWaveNumber(Integer.parseInt(waveNumber));
+			GestureDefence.this.sMoney = Integer.parseInt(currentCash);
+			GestureDefence.this.mMoneyEarned = Integer.parseInt(totalCash);
+			GestureDefence.this.sCastle.setCurrentHealth(Integer.parseInt(currentHealth));
+			GestureDefence.this.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
+			
+			GestureDefence.this.ButtonPress(3);			
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Loaded!", Toast.LENGTH_LONG).show();
+			
+			return true;
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
+			return false;
+		}
 	}
 	
 	// ========================================
