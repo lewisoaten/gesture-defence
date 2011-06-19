@@ -8,3 +8,35 @@ It is a very basic algorithm at the moment.
 
 Found some bugs/glitch's ?
 Create an issue with the best description as to what and how it's happening.
+
+		___ TESTED ANDROID VERSIONS ___
+
+**NOTE: This list has been compiled from AVD's within the SDK**
+**NOTE2: The testing done was to see if they installed and loaded successfully, game play has not been significantly tested**
+
+Android 1.5 - (Works, but not designed for it!)
+Android 1.6 - (Works, but not designed for it!)
+Android 2.1.update_1 - (Works, but not designed for it!)
+Android 2.2 - (Works, Game designed to work well with 2.2 and up)
+Android 2.3.1 - (Works)
+Android 2.3.3 - (Works)
+Android 3.0 - (Works, with a performance/install issues, but I think those are down to the SDK/AVD)
+Android 3.1 - (Works, with a performance/install issues, but I think those are down to the SDK/AVD)
+
+
+
+		<-- Tested Resolutions -->
+		
+QVGA (240 x 320) -> Side bar issues, screen isn't scaled so black bars appear on left and right hand sides of the game (top/bottom if on portrait devices, landscape devices = left/right)
+
+HVGA (320 x 480) -> Perfect size/scaling... :p
+
+WQVGA400 (240 x 400) -> Window doesn't scale, black border on left/right hand side, far left X also appears to be inaccurate within game code (preventing enemies off screen puts them about 10/20% into the window)
+
+WQVGA432 (200 x 432) -> Same issues as WQVGA432 ^^
+
+WVGA800 (480 x 800) -> Same issues as WQVGA432/400 ^^ Side bar problem aren't as large as 432/400 though!
+
+WVGA854 (480 x 854) -> Same issues as WQVGA432/400 & WVGA800 ^^ Side bars are worse than the 800, about a bad as the 432/400
+
+WXGA (1280 x 800) -> HA Awesome, needs entirely new sprites/resolution/scaling for this size (tablets). Runs now, but looks terrible. Also has side bar problem like most versions.

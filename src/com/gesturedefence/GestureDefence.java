@@ -44,7 +44,6 @@ import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
-import android.R.integer;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.KeyEvent;
