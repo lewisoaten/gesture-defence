@@ -108,8 +108,13 @@ public class ScreenManager {
 			MainMenu.registerTouchArea(quitButton);
 			MainMenu.registerTouchArea(LOADGame);
 			MainMenu.setTouchAreaBindingEnabled(true);
+			
+			base.ambient.setLooping(true);
+			base.ambient.play();
 		}
-		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
 		base.getEngine().setScene(MainMenu);
 	}
 	
@@ -150,6 +155,9 @@ public class ScreenManager {
 			});
 		}
 		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible() == false)
+				base.gethud().setVisible(true);
 		base.getEngine().setScene(GameScreen);
 	}
 	
@@ -164,6 +172,10 @@ public class ScreenManager {
 		}		
 		
 		base.theWave.mWaveNumberMenuItem.setPosition((base.getCameraWidth() / 2) - (base.theWave.mWaveNumberMenuItem.getWidth() / 2), (base.getCameraHeight() / 2) - (base.theWave.mWaveNumberMenuItem.getHeight() / 2));
+
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
 		base.getEngine().setScene(NewWaveScene);
 	}
 	
@@ -221,8 +233,12 @@ public class ScreenManager {
 			EndWaveScene.registerTouchArea(saveGame);
 		}
 		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
 		base.theWave.mCashAmountItem.setPosition(100, 100);
 		base.theWave.mBuyMenuItem.setPosition(100, 160);
+		base.complete.play();
 		base.getEngine().setScene(EndWaveScene);
 	}
 	
@@ -266,7 +282,11 @@ public class ScreenManager {
 			GameOverScene.registerTouchArea(gameOverText);
 		}		
 		
-		scorebits.setText("Kills = " + base.sKillCount + ", cash = " + base.sMoney); 
+		scorebits.setText("Kills = " + base.sKillCount + ", cash = " + base.mMoneyEarned);
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
+		base.game_over.play();
 		base.getEngine().setScene(GameOverScene);
 	}
 	
@@ -289,6 +309,9 @@ public class ScreenManager {
 			PauseScreen.attachChild(someText);
 		}		
 		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
 		base.getEngine().setScene(PauseScreen);
 	}
 	

@@ -71,14 +71,14 @@ public class Enemy extends AnimatedSprite {
 				this.mCashWorth = 40;
 				this.mAttackDamage = 10.0f;
 				this.mHealth = 300.0f;
-				this.mSpeed = MathUtils.random(0.5f,25.0f);
+				this.mSpeed = MathUtils.random(1.0f,25.0f);
 				this.mEnemyType = 1;
 				break;
 			case 2:
 				this.mCashWorth = 150;
 				this.mAttackDamage = 100.0f;
 				this.mHealth = 670.0f;
-				this.mSpeed = MathUtils.random(18.0f,33.0f);
+				this.mSpeed = MathUtils.random(18.0f,40.0f);
 				this.mEnemyType = 2;
 				break;
 				
@@ -108,6 +108,7 @@ public class Enemy extends AnimatedSprite {
 					this.animate(new long[] {200, 200, 200}, new int[] {6, 7, 8}, 0);
 					this.lastSetAnimation = 3;
 					this.mSetDeathAnimation = true;
+					base.splat.play();
 				}
 				else if (this.isAnimationRunning() == false)
 				{
@@ -136,11 +137,14 @@ public class Enemy extends AnimatedSprite {
 					{
 						this.animate(new long[] {150,150,250, 150, 150}, new int[] {9, 10, 11, 10, 9}, 0);
 						this.lastSetAnimation = 5;
+						base.hurt.play();
+						base.sm.GameScreen.unregisterTouchArea(this);
 					}
 					else if (this.isAnimationRunning() == false)
 					{
 						this.mTripping = false;
 						this.mPhysicsHandler.setEnabled(true);
+						base.sm.GameScreen.registerTouchArea(this);
 					}
 				}
 				
@@ -152,6 +156,7 @@ public class Enemy extends AnimatedSprite {
 						Castle.damageCastle(this.mAttackDamage);
 						base.updateCastleHealth();
 						this.mAttackedTheCastle = true;
+						base.attack.play();
 					}
 					if (this.getCurrentTileIndex() != 4 && this.mAttackedTheCastle)
 					{
@@ -165,6 +170,7 @@ public class Enemy extends AnimatedSprite {
 					if (this.mIsAirbourne == true)
 					{
 						//Airborne code
+						base.sm.GameScreen.unregisterTouchArea(this);
 						if (lastSetAnimation != 2)
 						{
 							this.animate(new long[] {200,0}, 6, 7, true);
@@ -185,6 +191,7 @@ public class Enemy extends AnimatedSprite {
 						if(this.mY > this.mInitialY)
 						{
 							this.mIsAirbourne = false;
+							base.sm.GameScreen.registerTouchArea(this);
 							//Hurt them
 							mGroundHitSpeed = this.mPhysicsHandler.getVelocityY();
 							EnemySubtractHealth();
