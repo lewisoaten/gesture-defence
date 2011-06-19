@@ -140,10 +140,10 @@ public class ScreenManager {
 							/* Oh they all dead */
 							base.theWave.mCashAmountItem.setText("CASH : " + base.sMoney);
 							base.theWave.mBuyMenuItem.setText("HEALTH : " + base.sCastle.getCurrentHealth() + "/ " + base.sCastle.getMaxHealth());
-							base.sm.EndWaveScreen();
 							base.sEndWaveActive = true;
 							base.sPreviousWaveNum = base.theWave.getWaveNumber();
 							base.sPreviousKillCount += base.theWave.getNumberEnemysToSpawn();
+							base.sm.EndWaveScreen();
 						}
 				}
 

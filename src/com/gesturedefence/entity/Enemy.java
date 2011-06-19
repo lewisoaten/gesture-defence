@@ -35,7 +35,7 @@ public class Enemy extends AnimatedSprite {
 		private float mMoveDelay = 0.0f; //Used to store how long enemy was dragged
 		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
 		private float mGroundHitSpeed = 0.0f; //Used for damage calculations
-		private float mInitialY = this.getY(); //used to keep track of each enemy's ground levels
+		private float mInitialY = this.getY(); //used to keep track of each enemy's ground level
 		
 		private boolean mTimerHandler = false; //Used to track how long they were moved for
 		
@@ -53,7 +53,13 @@ public class Enemy extends AnimatedSprite {
 		
 		private int mEnemyType = 0;
 		
-		private boolean mTripping = false;
+		private boolean mTripping = false; //Is the enemy tripping
+		
+		/* Don't work, needs some adjusting! */
+//		private float mHoldX = 0.0f; //Used to work out hold delay
+//		private float mHoldY = 0.0f; //Used to work out hold delay
+//		private boolean mMoved = false; //Used to work out hold delay
+//		private float mMoveY = 0.0f; //Used to calculate Y velocity on move
 	
 	// ========================================
 	// Constructors
@@ -70,8 +76,8 @@ public class Enemy extends AnimatedSprite {
 			case 1:
 				this.mCashWorth = 40;
 				this.mAttackDamage = 10.0f;
-				this.mHealth = 300.0f;
-				this.mSpeed = MathUtils.random(1.0f,25.0f);
+				this.mHealth = 150.0f;
+				this.mSpeed = MathUtils.random(6.5f,25.0f);
 				this.mEnemyType = 1;
 				break;
 			case 2:
@@ -119,6 +125,7 @@ public class Enemy extends AnimatedSprite {
 					base.mMoneyEarned += this.mCashWorth;
 					base.updateCashValue();
 					base.sKillCount++;
+					base.mOnScreenEnemies--;
 					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal
@@ -204,6 +211,9 @@ public class Enemy extends AnimatedSprite {
 						}
 						else if(this.mY < this.mInitialY)
 						{
+							if (this.mY < 0.0f) //Check if it's above the screen (screen top is 0.0)
+								if (this.mPhysicsHandler.getVelocityY() < -1000) //Negative because Y is backwards
+									this.mPhysicsHandler.setVelocityY(-1000); //If it's going to fast slow it down!
 							this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
 						}
 						//End of airborne section
@@ -268,12 +278,12 @@ public class Enemy extends AnimatedSprite {
 						this.mCanAttackCastle = false;
 						mMoveDelay = 0.0f;
 						mMoveX = this.mX;
-						mTimeMoved = new TimerHandler(1 / 20.0f, true, new ITimerCallback()
+						mTimeMoved = new TimerHandler(1 / 4.0f, true, new ITimerCallback()
 						{
 							@Override
 							public void onTimePassed(final TimerHandler pTimerHandler)
 							{
-								//mMoveDelay++;
+								//Tried working out position, went wrong...late night!
 							}
 						});
 						this.registerUpdateHandler(this.mTimeMoved);
@@ -303,12 +313,12 @@ public class Enemy extends AnimatedSprite {
 						this.unregisterUpdateHandler(this.mTimeMoved);
 						
 						float mDiffX = this.mX - mMoveX;
-						float mDiffY = this.mY - mInitialY;
+						float mDiffY = this.mY - this.mInitialY;
 						float mVelocityX = mDiffX * 10;
 						float mVelocityY = mDiffY * 10;
 						
 						//Check to see how far it moved, if it didn't move far at all, make them trip up instead
-						if (mDiffY > -10.0f)
+						if ( (mDiffY > -10.0f) )
 						{
 							mVelocityX = 0;
 							mVelocityY = 0;

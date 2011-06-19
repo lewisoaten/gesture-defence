@@ -90,27 +90,30 @@ public class Wave {
 				{
 					/* Every 10th of a second do a random spawn check
 					 * This could be changed, but for now its this */
-					int randomChance = MathUtils.random(1, 10);
-					int randomChance2 = MathUtils.random(1, 10);
-					int difficultyChance = MathUtils.random(1, 45);
-					
-					if (randomChance == randomChance2)
+					if (base.mOnScreenEnemies <= base.mOnScreenEnemyLimit) //Add a fixed limit to enemies on screen, Prevent LAG!
 					{
-						/* Start a spawn */
-						final float xPos = 0 - 64;
-						/* Allow for future adverts height ?*/
-						final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
+						int randomChance = MathUtils.random(1, 10);
+						int randomChance2 = MathUtils.random(1, 10);
+						int difficultyChance = MathUtils.random(1, 45);
 						
-						if ( (difficultyChance == randomChance) && (Wave.sWaveNumber >= 5) )
-						{ //Spawn harder enemy
-							base.loadNewEnemy(xPos, yPos, 2);
+						if (randomChance == randomChance2)
+						{
+							/* Start a spawn */
+							final float xPos = 0 - 64;
+							/* Allow for future adverts height ?*/
+							final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
+							
+							if ( (difficultyChance == randomChance) && (Wave.sWaveNumber >= 5) )
+							{ //Spawn harder enemy
+								base.loadNewEnemy(xPos, yPos, 2);
+							}
+							else //Spawn default enemy
+								base.loadNewEnemy(xPos, yPos, 1);
 						}
-						else //Spawn default enemy
-							base.loadNewEnemy(xPos, yPos, 1);
-					}
-					if (base.sEnemyCount == Wave.sNumberEnemysToSpawn)
-					{ //Once all the enemies have been spawned, remove the timer
-						base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
+						if (base.sEnemyCount == Wave.sNumberEnemysToSpawn)
+						{ //Once all the enemies have been spawned, remove the timer
+							base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
+						}
 					}
 				}
 			}));

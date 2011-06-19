@@ -155,6 +155,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	/* Music */
 	public Music ambient;
 	
+	public int mOnScreenEnemyLimit = 40; //A hard cap on the total number of enemies at any one time
+	public int mOnScreenEnemies = 0; //Used with above in the Wave class
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -528,6 +531,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
 		GestureDefence.this.sEnemyCount++; //Increase the enemy count
+		GestureDefence.this.mOnScreenEnemies++;
 	}
 	
 	public void updateCastleHealth()
