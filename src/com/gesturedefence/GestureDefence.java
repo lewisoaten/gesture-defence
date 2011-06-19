@@ -14,6 +14,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import org.anddev.andengine.audio.music.Music;
+import org.anddev.andengine.audio.music.MusicFactory;
+import org.anddev.andengine.audio.sound.Sound;
+import org.anddev.andengine.audio.sound.SoundFactory;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
 import org.anddev.andengine.engine.camera.hud.HUD;
@@ -46,6 +50,7 @@ import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.widget.Toast;
@@ -140,6 +145,16 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private Texture mNextWaveButton;
 	private TextureRegion mNextWaveButtonRegion;
 	
+	/* Sounds */
+	public Sound splat;
+	public Sound attack;
+	public Sound hurt;
+	public Sound complete;
+	public Sound game_over;
+	
+	/* Music */
+	public Music ambient;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -207,6 +222,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		return CAMERA_HEIGHT;
 	}
 	
+	public HUD gethud() {
+			return GestureDefence.this.hud;
+	}
+	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
 	// ========================================
@@ -248,7 +267,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			GestureDefence.this.mCheckedRes = true;//working??
 		}
 	GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, orientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera));
+		return new Engine(new EngineOptions(true, orientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera).setNeedsSound(true).setNeedsMusic(true));
 	}
 	
 	@Override
@@ -332,6 +351,27 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				//Setup the castle, but don't actually attach it yet!
 				GestureDefence.this.sCastle = new Castle(0, 0, GestureDefence.this.mCastleTextureRegion);
 				GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
+				
+				SoundFactory.setAssetBasePath("sfx/");
+				try {
+					//Sound effects
+					GestureDefence.this.splat = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "splat.ogg");
+					GestureDefence.this.splat.setVolume(1.0f);
+					GestureDefence.this.attack = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "attack.ogg");
+					GestureDefence.this.attack.setVolume(0.1f);
+					GestureDefence.this.hurt = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "hurt.ogg");
+					GestureDefence.this.hurt.setVolume(1.0f);
+					GestureDefence.this.complete = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "complete.ogg");
+					GestureDefence.this.complete.setVolume(2.0f);
+					GestureDefence.this.game_over = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "gameOver.ogg");
+					GestureDefence.this.game_over.setVolume(5.0f);
+					
+					//Music
+					GestureDefence.this.ambient = MusicFactory.createMusicFromAsset(GestureDefence.this.getEngine().getMusicManager(), GestureDefence.this, "sfx/ambient.ogg");
+					GestureDefence.this.ambient.setVolume(0.5f);
+				} catch (final IOException e) {
+					//File not found
+				}
 				
 				GestureDefence.this.sm.loadMainMenu();
 			}
