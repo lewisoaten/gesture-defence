@@ -46,6 +46,7 @@ import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
@@ -59,9 +60,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	// Constants
 	// ========================================
 	
-	public final static int CAMERA_WIDTH = 720;
-	public final static int CAMERA_HEIGHT = 480;
+	private static int CAMERA_WIDTH = 800; //Default camera width of the window
+	private static int CAMERA_HEIGHT = 480; //Default camera height of the window
 	
+	
+	//buttons below, arnt really used now, may/will be removed at a later date
 	private static final int MENU_START = 0;
 	private static final int MENU_QUIT = MENU_START + 1;
 	private static final int MENU_RESTART = MENU_QUIT + 1;
@@ -79,36 +82,40 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public EntityDetachRunnablePoolUpdateHandler sRemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
-	private Texture mAutoParallaxBackgroundTexture;
+	private Texture mAutoParallaxBackgroundTexture; //Background scrolling texture, holds each of the textures for the background
 	
-	private TextureRegion mParallaxLayerBack;
-	private TextureRegion mParallaxLayerFront;
+	private TextureRegion mParallaxLayerBack; //Back layer for Parallax background
+	private TextureRegion mParallaxLayerFront; //Front layer for Parallax background
 	
-	public AutoParallaxBackground autoParallaxBackground;
+	public AutoParallaxBackground autoParallaxBackground; //Parallax background
 	
-	private Texture mFontTexture;
-	public Font mFont;
+	private Texture mFontTexture; //Font one texture
+	public Font mFont; //Font one settings
 	
-	private Texture mFontTexture2;
-	public Font mFont2;
+	private Texture mFontTexture2; //Font two texture
+	public Font mFont2; //Font two settings
 	
-	private Texture newEnemyTexture;
+	private Texture newEnemyTexture; //Enemy one Texture & region
 	private TiledTextureRegion sEnemyTextureRegion;
 	
-	private Texture newEnemyTexture2;
+	private Texture newEnemyTexture2; //Enemy two Texture & region
 	private TiledTextureRegion sEnemyTextureRegion2;
 	
-	private Texture mCastleTexture;
+	private Texture mCastleTexture; //Castle texture & region
 	private TextureRegion mCastleTextureRegion;
-	private static ChangeableText sCastleHealth;
-	public Castle sCastle;
+	private static ChangeableText sCastleHealth; //Changeable text item for castle health
+	public Castle sCastle; //Instance of custom castle entity
 	
-	private HUD hud;
-	private static ChangeableText sMoneyText;
+	private HUD hud; //In-game hud
+	private static ChangeableText sMoneyText; //Changeable text item for Current money
 	
-	public Wave theWave;
+	public Wave theWave; // Instance of custom Wave class
 	
-	public boolean sEndWaveActive = false; //Remove?
+	public boolean sEndWaveActive = false; //Remove??
+	
+	/* Checks for resolution and layout */
+	public ScreenOrientation orientation = ScreenOrientation.LANDSCAPE;
+	public boolean mCheckedRes = false; //Bah doesn't work
 	
 	/* These need to be reset/loaded for each game */
 	public int sPreviousWaveNum = 0;
@@ -119,7 +126,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public int sEnemyCount = 0;
 	// ------
 	
-	public ScreenManager sm;
+	public ScreenManager sm; //Instance of custom class screenmanager
 	
 	/* New menu texture's
 	 * These currently placeholder's
@@ -206,8 +213,42 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 
 	@Override
 	public Engine onLoadEngine() {
+		/* Do some quick checks to get the actual screen resolution 
+		 * This code runs twice, the call at the end for a new engine
+		 * causes this to run again,
+		 * second time through the correct display is setup */		
+		/* Set-up the game engine and default camera location */
+		if (GestureDefence.this.mCheckedRes == false) //Check doesn't work??
+		{
+			DisplayMetrics dm = new DisplayMetrics();
+			getWindowManager().getDefaultDisplay().getMetrics(dm);
+			int width = (int) (dm.widthPixels); //Gets the actual width of the screen
+			int height = (int) (dm.heightPixels); //Gets the actual height of the screen
+
+			
+			
+			
+			/* Check the width, if it's one of the following change the camera width for it to fit the screen */
+				if (width == 320)
+					GestureDefence.this.CAMERA_WIDTH = 640;
+				if (width == 400)
+					GestureDefence.this.CAMERA_WIDTH = 800;
+				if (width == 432)
+					GestureDefence.this.CAMERA_WIDTH = 864;
+				if (width == 480)
+					GestureDefence.this.CAMERA_WIDTH = 720;
+				if (width == 800)
+					GestureDefence.this.CAMERA_WIDTH = 800;
+				if (width == 854)
+					GestureDefence.this.CAMERA_WIDTH = 854;
+				
+				if (height == 1280) //Test for tablet sized devices....Performance issues with AVD's prevent decent testing!
+					GestureDefence.this.CAMERA_HEIGHT = 1280;
+				
+			GestureDefence.this.mCheckedRes = true;//working??
+		}
 	GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera));
+		return new Engine(new EngineOptions(true, orientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera));
 	}
 	
 	@Override
@@ -220,6 +261,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.mEngine.getTextureManager().loadTexture(this.mFontTexture);
 		this.mEngine.getFontManager().loadFont(mFont);
 		
+		//Then create an instance of a Screenamanger
 		this.sm = new ScreenManager(this);
 	}
 	
@@ -227,16 +269,19 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public Scene onLoadScene() {
 		this.mEngine.registerUpdateHandler(new FPSLogger());
 		
+		//Create a load screen
 		final Scene loadScene = new Scene(1);
 		loadScene.setBackground(new ColorBackground(0.09804f, 0.6274f, 0.8784f));
 		
+		//Show loading text on new load screen
 		final Text textCenter = new Text(100, 60, this.mFont, "LOADING..", HorizontalAlign.CENTER);
 		loadScene.attachChild(textCenter);
 		
+		//Create a timer that after 1 second  begins loading all other textures
 		loadScene.registerUpdateHandler(new TimerHandler(1.0f, true, new ITimerCallback() {
 			@Override
 			public void onTimePassed(final TimerHandler pTimerHandler) {
-				loadScene.unregisterUpdateHandler(pTimerHandler);
+				loadScene.unregisterUpdateHandler(pTimerHandler); //Unload the timer, save resources and prevents running twice!
 				
 				/* Smaller font texture */
 				GestureDefence.this.mFontTexture2 = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -306,11 +351,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		if(pKeyCode == KeyEvent.KEYCODE_MENU && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{
 			if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
-			{
+			{ //Show pause screen (only if in game screen!)
 				GestureDefence.this.sm.loadPauseScreen();
 			}
 			else if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.PauseScreen)
-			{
+			{ //Close pause screen and return to game
 				GestureDefence.this.sm.GameScreen();
 			}
 			return true;
@@ -332,10 +377,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	// Methods
 	// ========================================
 	
-	public boolean ButtonPress(int ButtonID) {
+	public boolean ButtonPress(int ButtonID) { //Custom Button press function ;)
 		switch(ButtonID) {
 		case 1:
-			/* DO some start game code at some point */			
+			//Start's a new game!			
 			GestureDefence.this.sm.NewWaveScreen();
 			
 			GestureDefence.this.sm.NewWaveScene.registerUpdateHandler(new TimerHandler(3.0f, true, new ITimerCallback()
@@ -378,7 +423,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			}
 			return true;
 		case 7:
-			/* Buying health increase */
+			/* Buying max health increase */
 			if (sMoney - 1000 >= 0)
 			{
 				sMoney -= 1000;
@@ -398,14 +443,14 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		}
 	}
 	
-	public void loadCastle(float X, float Y) {
+	public void loadCastle(float X, float Y) { //Load the castle sprite at X/Y cords
 		GestureDefence.this.sCastle.setPosition(X, Y);
 		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
 	}
 	
 	public void loadHud()
-	{
-		if (this.hud == null)
+	{ //Load the hud
+		if (this.hud == null) //If hud hasn't been loaded yet, run this
 		{
 			this.hud = new HUD();
 			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 200, 0 + 20, mFont2, "XXXXXX / XXXXXX", "XXXXXX / XXXXXX".length());
@@ -439,24 +484,24 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
 		 		break;
 		 }
-		GestureDefence.this.sm.GameScreen.attachChild(newEnemy);
-		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy);
-		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true);
-		GestureDefence.this.sEnemyCount++;
+		GestureDefence.this.sm.GameScreen.attachChild(newEnemy); //Attach it to the screen
+		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
+		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
+		GestureDefence.this.sEnemyCount++; //Increase the enemy count
 	}
 	
 	public void updateCastleHealth()
-	{
+	{ //Refresh's the castle's health display
 		sCastleHealth.setText(GestureDefence.this.sCastle.getCurrentHealth() + " / " + GestureDefence.this.sCastle.getMaxHealth());
 	}
 	
 	public void updateCashValue()
-	{
+	{ //Refresh's the current money display
 		sMoneyText.setText("" + GestureDefence.this.sMoney);
 	}
 	
 	public boolean savegame()
-	{
+	{ //Self explanatory ?
 		String FILENAME = "save_game_file";
 		
 		try {
@@ -507,8 +552,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	}
 	
 	public boolean loadSaveFile()
-	{
-		
+	{ //Self explanatory ?
 		String FILENAME = "save_game_file";
 		String string = "";
 		String killCount = "";

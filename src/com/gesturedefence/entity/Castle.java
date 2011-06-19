@@ -22,7 +22,7 @@ public class Castle extends Sprite {
 	
 		private static float mHealth = 3000.0f; //The amount of health the castle has to start with
 		private static float mMaxHealth = 3000.0f; //The maximum amount of health the castle can have
-		private static GestureDefence base;
+		private static GestureDefence base; //Instance of GestureDefance, allows accessing the class from here!
 	
 	// ========================================
 	// Constructors
@@ -37,27 +37,31 @@ public class Castle extends Sprite {
 	// ========================================
 		
 		public void setCastleBase(GestureDefence base)
-		{
+		{ //Set the base to the GestureDefence object passed in
 			Castle.base = base;
 		}
 		
 		public int getCurrentHealth()
 		{
+			//Returns the current health of the castle
 			return (int) Castle.mHealth;
 		}
 		
 		public void setCurrentHealth(int amount)
 		{
+			//Set's the current health of the castle (used for reset's and load games)
 			Castle.mHealth = amount;
 		}
 		
 		public int getMaxHealth()
 		{
+			//Returns the max health the castle can have
 			return (int) Castle.mMaxHealth;
 		}
 		
 		public boolean increaseHealth(int amount)
 		{
+			//Increase's the current health by X amount
 			if ( (Castle.mHealth + amount) <= Castle.mMaxHealth)
 			{
 				Castle.mHealth += amount;
@@ -71,12 +75,14 @@ public class Castle extends Sprite {
 		
 		public boolean increaseMaxHealth(int amount)
 		{
+			//Increase's max health by X amount
 			Castle.mMaxHealth += amount;
 			return true;
 		}
 		
 		public void setMaxHealth(int amount)
 		{
+			//Set max health of castle (used in reset and load games)
 			Castle.mMaxHealth = amount;
 		}
 	
@@ -90,18 +96,19 @@ public class Castle extends Sprite {
 
 		@Override
 		public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY)
-		{
+		{	//Could be used at future point (touch castle sprite)
 			return true;
 		}		
 		
 		public static boolean damageCastle(float damgeValue)
-		{
+		{//Do some damage to the castle, X amount
+			//Check to make sure subtracting health wont cause game over
 			if (Castle.mHealth - damgeValue > 0)
 			{
 				Castle.mHealth -= damgeValue;
 			}
 			else
-			{
+			{ //YOU DEAD! game over!
 				Castle.mHealth = 0;
 				base.sm.GameOverScreen();
 			}

@@ -20,6 +20,14 @@ import com.gesturedefence.GestureDefence;
 
 public class ScreenManager {
 	
+	// ========================================
+	// Constants
+	// ========================================
+	
+	// ========================================
+	// Fields
+	// ========================================
+	
 	private GestureDefence base;
 	public Scene MainMenu;
 	public Scene GameScreen;
@@ -30,10 +38,26 @@ public class ScreenManager {
 	
 	private ChangeableText scorebits;
 	
+	// ========================================
+	// Constructors
+	// ========================================
+	
+	// ========================================
+	// Getter & Setter
+	// ========================================
+	
 	public ScreenManager(GestureDefence base)
 	{
 		this.base = base;
 	}
+	
+	// ========================================
+	// Methods for/from SuperClass/Interfaces
+	// ========================================
+	
+	// ========================================
+	// Methods
+	// ========================================
 	
 	public void loadMainMenu()
 	{
@@ -135,7 +159,7 @@ public class ScreenManager {
 		{
 			NewWaveScene = new Scene(1);
 			
-			base.theWave.mWaveNumberMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_WAVE_NUMBER, base.mFont, "WAVE : " + base.theWave.getWaveNumber(), ("WAVE : " + base.theWave.getWaveNumber()).length());
+			base.theWave.mWaveNumberMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_WAVE_NUMBER, base.mFont, "WAVE : " + base.theWave.getWaveNumber(), ("WAVE : XXXX").length());
 			NewWaveScene.attachChild(base.theWave.mWaveNumberMenuItem);
 		}		
 		
@@ -267,4 +291,8 @@ public class ScreenManager {
 		
 		base.getEngine().setScene(PauseScreen);
 	}
+	
+	// ========================================
+	// Inner and Anonymous Classes
+	// ========================================
 }

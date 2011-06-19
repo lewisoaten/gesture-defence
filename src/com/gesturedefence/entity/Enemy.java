@@ -171,15 +171,15 @@ public class Enemy extends AnimatedSprite {
 							lastSetAnimation = 2;
 						}					
 						
-						if(this.mX > (base.getCameraWidth() - this.getWidth()))
+						if(this.mX > (base.getCameraWidth() - (this.getWidth() / 2) ))
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.mX = (base.getCameraWidth() - this.getWidth());
+							this.mX = (base.getCameraWidth() - (this.getWidth() / 2) );
 						}
-						if(this.mX < (0.0f + this.getWidth()))
+						if(this.mX < (0.0f - (this.getWidth() / 2) ))
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition(0.0f + this.getWidth(), this.mY);
+							this.setPosition(0.0f - (this.getWidth() / 2), this.mY);
 						}
 						
 						if(this.mY > this.mInitialY)
@@ -204,7 +204,7 @@ public class Enemy extends AnimatedSprite {
 					else
 					{
 						// Non airborne code!
-						if(this.mX < (base.getCameraWidth() - 160) && this.mY >= this.mInitialY)
+						if(this.mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && this.mY >= this.mInitialY)
 						{
 							this.mPhysicsHandler.setVelocityX(mSpeed);
 							if(lastSetAnimation != 1)
@@ -213,10 +213,10 @@ public class Enemy extends AnimatedSprite {
 								lastSetAnimation = 1;
 							}
 						} 
-						else if(this.mX + this.getWidth() > (base.getCameraWidth() - 160))
+						else if(this.mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6))
 						{
 							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition(base.getCameraWidth() - 160 + (this.getWidth() / 2), this.mY);
+							this.setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), this.mY);
 							if(lastSetAnimation != 4)
 							{
 								/* Attacking Castle animation */
