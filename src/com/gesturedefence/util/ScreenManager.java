@@ -6,6 +6,8 @@ package com.gesturedefence.util;
  */
 
 import org.anddev.andengine.engine.handler.IUpdateHandler;
+import org.anddev.andengine.engine.handler.timer.ITimerCallback;
+import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.background.ColorBackground;
 import org.anddev.andengine.entity.sprite.Sprite;
@@ -13,8 +15,6 @@ import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.util.HorizontalAlign;
-
-import android.widget.Toast;
 
 import com.gesturedefence.GestureDefence;
 
@@ -144,6 +144,19 @@ public class ScreenManager {
 							base.sPreviousWaveNum = base.theWave.getWaveNumber();
 							base.sPreviousKillCount += base.theWave.getNumberEnemysToSpawn();
 							base.sm.EndWaveScreen();
+						}
+					if (base.lightning != null)
+						if (base.lightning.isAnimationRunning() == false)
+						{
+							base.sm.GameScreen.detachChild(base.lightning);
+							if (base.mLightningBolt == true)
+								base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 2.0f, true, new ITimerCallback() {
+									@Override
+									public void onTimePassed(TimerHandler pTimerHandler) {
+										base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
+										base.mLightningBolt = false;
+									}
+								}));
 						}
 				}
 

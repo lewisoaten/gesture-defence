@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 import org.anddev.andengine.audio.music.Music;
 import org.anddev.andengine.audio.music.MusicFactory;
@@ -33,6 +34,7 @@ import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxE
 import org.anddev.andengine.entity.scene.menu.MenuScene;
 import org.anddev.andengine.entity.scene.menu.MenuScene.IOnMenuItemClickListener;
 import org.anddev.andengine.entity.scene.menu.item.IMenuItem;
+import org.anddev.andengine.entity.sprite.AnimatedSprite;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.text.Text;
@@ -44,15 +46,23 @@ import org.anddev.andengine.opengl.texture.TextureOptions;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
-import org.anddev.andengine.ui.activity.BaseGameActivity;
+import org.anddev.andengine.ui.activity.LayoutGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
 import android.content.Context;
+import android.gesture.Gesture;
+import android.gesture.GestureLibraries;
+import android.gesture.GestureLibrary;
+import android.gesture.GestureOverlayView;
+import android.gesture.GestureOverlayView.OnGesturePerformedListener;
+import android.gesture.Prediction;
 import android.graphics.Color;
-import android.media.MediaPlayer;
+import android.graphics.RectF;
+import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.gesturedefence.entity.Castle;
@@ -60,7 +70,7 @@ import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
 
-public class GestureDefence extends BaseGameActivity implements IOnMenuItemClickListener {
+public class GestureDefence extends LayoutGameActivity implements IOnMenuItemClickListener, OnGesturePerformedListener {
 	// ========================================
 	// Constants
 	// ========================================
@@ -111,6 +121,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private static ChangeableText sCastleHealth; //Changeable text item for castle health
 	public Castle sCastle; //Instance of custom castle entity
 	
+	private Texture mLightningTexture;
+	private TiledTextureRegion mLightningTextureRegion;
+	public AnimatedSprite lightning;
+	
 	private HUD hud; //In-game hud
 	private static ChangeableText sMoneyText; //Changeable text item for Current money
 	
@@ -151,12 +165,18 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public Sound hurt;
 	public Sound complete;
 	public Sound game_over;
+	public Sound ligtningStrike;
 	
 	/* Music */
 	public Music ambient;
 	
 	public int mOnScreenEnemyLimit = 40; //A hard cap on the total number of enemies at any one time
 	public int mOnScreenEnemies = 0; //Used with above in the Wave class
+	
+	protected GestureLibrary mLibrary;
+	public GestureOverlayView gestures;
+	public boolean mLightningBolt = false; //Used to track lightning strike
+	public float mLightningBoltX; //Used to track lightning strike
 	
 	// ========================================
 	// Constructors
@@ -232,6 +252,30 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
 	// ========================================
+	
+	@Override
+	protected int getLayoutID() { //Have to include, game will not function otherwise
+		return R.layout.main;
+	}
+	
+	@Override
+	protected int getRenderSurfaceViewID() { //Have to include, game will not function otherwise
+		return R.id.rendersurfaceview;
+	}
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) { //Purely to get gestures loading and detecting!
+		super.onCreate(savedInstanceState);
+		GestureDefence.this.mLibrary = GestureLibraries.fromRawResource(GestureDefence.this, R.raw.spells);
+		if (!mLibrary.load()) {
+			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_LONG).show();
+		}
+		else
+			Toast.makeText(this, "Gesture library loaded", Toast.LENGTH_LONG).show();
+		
+		gestures = (GestureOverlayView) findViewById(R.id.gestures);
+		gestures.addOnGesturePerformedListener(this);		
+	}
 
 	@Override
 	public Engine onLoadEngine() {
@@ -331,6 +375,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.sEnemyTextureRegion2 = TextureRegionFactory.createTiledFromAsset(newEnemyTexture2, GestureDefence.this, "gfx/enemy_2.png", 0, 0, 3, 4);
 				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.newEnemyTexture, GestureDefence.this.newEnemyTexture2);
 				
+				/* Lightning texture sprite */
+				GestureDefence.this.mLightningTexture = new Texture(1024, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mLightningTextureRegion = TextureRegionFactory.createTiledFromAsset(mLightningTexture, GestureDefence.this, "gfx/lightning.png", 0, 0, 6, 1);
+				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mLightningTexture);
+				
 				/* Load castle sprite */
 				GestureDefence.this.mCastleTexture = new Texture(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 				GestureDefence.this.mCastleTextureRegion = TextureRegionFactory.createFromAsset(mCastleTexture, GestureDefence.this, "gfx/crappy_castle.png", 0, 0);
@@ -368,6 +417,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 					GestureDefence.this.complete.setVolume(2.0f);
 					GestureDefence.this.game_over = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "gameOver.ogg");
 					GestureDefence.this.game_over.setVolume(5.0f);
+					GestureDefence.this.ligtningStrike = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "lightning.ogg");
+					GestureDefence.this.ligtningStrike.setVolume(5.0f);
 					
 					//Music
 					GestureDefence.this.ambient = MusicFactory.createMusicFromAsset(GestureDefence.this.getEngine().getMusicManager(), GestureDefence.this, "sfx/ambient.ogg");
@@ -375,7 +426,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				} catch (final IOException e) {
 					//File not found
 				}
-				
+
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -490,6 +541,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		GestureDefence.this.sCastle.setPosition(X, Y);
 		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
 	}
+	
+	
 	
 	public void loadHud()
 	{ //Load the hud
@@ -680,6 +733,32 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			e.printStackTrace();
 			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
 			return false;
+		}
+	}
+
+	
+	public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) { //Used to detect the gesture!!
+		ArrayList<Prediction> predictions = mLibrary.recognize(gesture);
+		
+		if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
+		{ //Ensure that only the game scene is detecting the gestures!
+			if (predictions.size() > 0) {
+				Prediction prediction = predictions.get(0);
+				if (prediction.score > 1.0) {
+					GestureDefence.this.ligtningStrike.play();
+					//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
+					
+					RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
+					float posX = tempThing.left; //Take the left hand side as the X position
+					float posY = tempThing.bottom - 330; //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
+					
+					lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
+					lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
+					GestureDefence.this.sm.GameScreen.attachChild(lightning);
+					GestureDefence.this.mLightningBoltX = posX;
+					GestureDefence.this.mLightningBolt = true;
+				}
+			}
 		}
 	}
 	

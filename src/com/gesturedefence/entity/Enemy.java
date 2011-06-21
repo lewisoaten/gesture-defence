@@ -104,6 +104,10 @@ public class Enemy extends AnimatedSprite {
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed)
 		{
+			if ((base.mLightningBolt == true) && (this.mX <= base.mLightningBoltX + 30) && (this.mX >= base.mLightningBoltX - 30) )
+			{
+				this.EnemyHurtFace(1000);
+			}
 			if (isEnemyDead())
 			{
 				if (this.mSetDeathAnimation == false)
@@ -356,6 +360,11 @@ public class Enemy extends AnimatedSprite {
 		{
 			this.mHealth -= (mGroundHitSpeed / 3);
 			mGroundHitSpeed = 0;
+		}
+		
+		public void EnemyHurtFace(int amount)
+		{
+			this.mHealth -= amount;
 		}
 	
 	// ========================================
