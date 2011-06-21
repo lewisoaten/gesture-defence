@@ -9,6 +9,7 @@ import org.anddev.andengine.engine.handler.physics.PhysicsHandler;
 import org.anddev.andengine.engine.handler.timer.ITimerCallback;
 import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.entity.sprite.AnimatedSprite;
+import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.MathUtils;
@@ -130,6 +131,14 @@ public class Enemy extends AnimatedSprite {
 					base.updateCashValue();
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
+					
+					int randomChance = MathUtils.random(1, 5); //20% Chance?
+					if (randomChance == 3)
+					{
+						Sprite mMana = new Mana(this.mX, this.mY, base.getManaTextureRegion(), base);
+						base.sm.GameScreen.attachChild(mMana);
+						base.sm.GameScreen.registerTouchArea(mMana);
+					}
 					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal

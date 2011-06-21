@@ -125,8 +125,12 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	private TiledTextureRegion mLightningTextureRegion;
 	public AnimatedSprite lightning;
 	
+	private Texture mManaTexture;
+	private TextureRegion mManaTextureRegion;
+	
 	private HUD hud; //In-game hud
 	private static ChangeableText sMoneyText; //Changeable text item for Current money
+	private ChangeableText sManaText; //Mana hud text
 	
 	public Wave theWave; // Instance of custom Wave class
 	
@@ -177,6 +181,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public GestureOverlayView gestures;
 	public boolean mLightningBolt = false; //Used to track lightning strike
 	public float mLightningBoltX; //Used to track lightning strike
+	
+	public int mana = 0;
 	
 	// ========================================
 	// Constructors
@@ -237,6 +243,10 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		return mCastleTexture;
 	}
 	
+	public TextureRegion getManaTextureRegion() {
+		return mManaTextureRegion;
+	}
+	
 	public int getCameraWidth() {
 		return CAMERA_WIDTH;
 	}
@@ -274,6 +284,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			Toast.makeText(this, "Gesture library loaded", Toast.LENGTH_LONG).show();
 		
 		gestures = (GestureOverlayView) findViewById(R.id.gestures);
+		gestures.setWillNotDraw(true);
+		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);		
 	}
 
@@ -380,6 +392,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				GestureDefence.this.mLightningTextureRegion = TextureRegionFactory.createTiledFromAsset(mLightningTexture, GestureDefence.this, "gfx/lightning.png", 0, 0, 6, 1);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mLightningTexture);
 				
+				/* Mana texture */
+				GestureDefence.this.mManaTexture = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mManaTextureRegion = TextureRegionFactory.createFromAsset(mManaTexture, GestureDefence.this, "gfx/mana.png", 0, 0);
+				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mManaTexture);
+				
 				/* Load castle sprite */
 				GestureDefence.this.mCastleTexture = new Texture(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 				GestureDefence.this.mCastleTextureRegion = TextureRegionFactory.createFromAsset(mCastleTexture, GestureDefence.this, "gfx/crappy_castle.png", 0, 0);
@@ -412,7 +429,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 					GestureDefence.this.attack = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "attack.ogg");
 					GestureDefence.this.attack.setVolume(0.1f);
 					GestureDefence.this.hurt = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "hurt.ogg");
-					GestureDefence.this.hurt.setVolume(1.0f);
+					GestureDefence.this.hurt.setVolume(0.5f);
 					GestureDefence.this.complete = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "complete.ogg");
 					GestureDefence.this.complete.setVolume(2.0f);
 					GestureDefence.this.game_over = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "gameOver.ogg");
@@ -555,10 +572,15 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			
 			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont2, "" + sMoney, "XXXXXX".length());
 			this.hud.getLastChild().attachChild(sMoneyText);
+			
+			sManaText = new ChangeableText(sCastleHealth.getX(), sCastleHealth.getY() + sCastleHealth.getHeight(), mFont2, "XXXXXX", "XXXXXX".length());
+			sManaText.setColor(0.0f, 0.0f, 0.8f);
+			this.hud.getLastChild().attachChild(sManaText);
 		}
 		
 		updateCastleHealth();
 		updateCashValue();
+		updateManaValue();
 	}
 	
 	public void loadNewEnemy(float X, float Y, int type) {
@@ -597,6 +619,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		sMoneyText.setText("" + GestureDefence.this.sMoney);
 	}
 	
+	public void updateManaValue()
+	{ //Refresh's the current money display
+		sManaText.setText("" + GestureDefence.this.mana);
+	}
+	
 	public boolean savegame()
 	{ //Self explanatory ?
 		String FILENAME = "save_game_file";
@@ -613,6 +640,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			String currentHealth = "#5:" + GestureDefence.this.sCastle.getCurrentHealth();
 			String maxHealth = "#6:" + GestureDefence.this.sCastle.getMaxHealth();
 			String previousKills = "#7:" + GestureDefence.this.sPreviousKillCount;
+			String manaLevel = "#8:" + GestureDefence.this.mana;
 			
 			buf.write(killCount);
 			buf.newLine();
@@ -627,6 +655,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			buf.write(maxHealth);
 			buf.newLine();
 			buf.write(previousKills);
+			buf.newLine();
+			buf.write(manaLevel);
 			buf.newLine();
 			
 			buf.close();
@@ -652,13 +682,14 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	{ //Self explanatory ?
 		String FILENAME = "save_game_file";
 		String string = "";
-		String killCount = "";
-		String waveNumber = "";
-		String currentCash = "";
-		String totalCash = "";
-		String currentHealth = "";
-		String maxHealth = "";
-		String prevKills = "";
+		String killCount = "0";
+		String waveNumber = "0";
+		String currentCash = "0";
+		String totalCash = "0";
+		String currentHealth = "3000";
+		String maxHealth = "3000";
+		String prevKills = "0";
+		String manaLevel = "0";
 		
 		try {
 			FileInputStream fis = openFileInput(FILENAME);
@@ -704,6 +735,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 					int pos = string.indexOf(":");
 					prevKills = string.substring(pos + 1);
 				}
+				if (string.contains("#8:"))
+				{
+					int pos = string.indexOf(":");
+					manaLevel = string.substring(pos + 1);
+				}
 				
 				string = buffreader.readLine();
 			}
@@ -719,6 +755,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			GestureDefence.this.mMoneyEarned = Integer.parseInt(totalCash);
 			GestureDefence.this.sCastle.setCurrentHealth(Integer.parseInt(currentHealth));
 			GestureDefence.this.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
+			GestureDefence.this.mana = Integer.parseInt(manaLevel);
 			
 			GestureDefence.this.ButtonPress(3);			
 			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Loaded!", Toast.LENGTH_LONG).show();
@@ -745,18 +782,24 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			if (predictions.size() > 0) {
 				Prediction prediction = predictions.get(0);
 				if (prediction.score > 1.0) {
-					GestureDefence.this.ligtningStrike.play();
-					//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
-					
-					RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
-					float posX = tempThing.left; //Take the left hand side as the X position
-					float posY = tempThing.bottom - 330; //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
-					
-					lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
-					lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
-					GestureDefence.this.sm.GameScreen.attachChild(lightning);
-					GestureDefence.this.mLightningBoltX = posX;
-					GestureDefence.this.mLightningBolt = true;
+					if ((GestureDefence.this.mana - 100) >= 0)
+					{
+						GestureDefence.this.mana -= 100;
+						GestureDefence.this.ligtningStrike.play();
+						//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
+						
+						RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
+						float posX = tempThing.left; //Take the left hand side as the X position
+						float posY = tempThing.bottom - 330; //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
+						
+						lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
+						lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
+						GestureDefence.this.sm.GameScreen.attachChild(lightning);
+						GestureDefence.this.mLightningBoltX = posX;
+						GestureDefence.this.mLightningBolt = true;
+						
+						GestureDefence.this.updateManaValue();
+					}
 				}
 			}
 		}

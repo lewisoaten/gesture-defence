@@ -150,7 +150,7 @@ public class ScreenManager {
 						{
 							base.sm.GameScreen.detachChild(base.lightning);
 							if (base.mLightningBolt == true)
-								base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 2.0f, true, new ITimerCallback() {
+								base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 3.0f, true, new ITimerCallback() {
 									@Override
 									public void onTimePassed(TimerHandler pTimerHandler) {
 										base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
