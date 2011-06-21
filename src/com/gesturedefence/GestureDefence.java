@@ -181,8 +181,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public GestureOverlayView gestures;
 	public boolean mLightningBolt = false; //Used to track lightning strike
 	public float mLightningBoltX; //Used to track lightning strike
+	public float mLightningBoltY; //Used to track lightning stirke
 	
-	public int mana = 0;
+	public int mana = 0; //Mana levels
+	
+	public boolean gameLoaded = false; //Used to show game loaded toast
 	
 	// ========================================
 	// Constructors
@@ -278,10 +281,10 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		super.onCreate(savedInstanceState);
 		GestureDefence.this.mLibrary = GestureLibraries.fromRawResource(GestureDefence.this, R.raw.spells);
 		if (!mLibrary.load()) {
-			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_SHORT).show();
 		}
 		else
-			Toast.makeText(this, "Gesture library loaded", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, "Gesture library loaded", Toast.LENGTH_SHORT).show();
 		
 		gestures = (GestureOverlayView) findViewById(R.id.gestures);
 		gestures.setWillNotDraw(true);
@@ -443,8 +446,9 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				} catch (final IOException e) {
 					//File not found
 				}
-
-				GestureDefence.this.sm.loadMainMenu();
+				
+				if (GestureDefence.this.loadSaveFile() == false)
+					GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
 		
@@ -544,6 +548,32 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				GestureDefence.this.updateCashValue();
 				GestureDefence.this.updateCastleHealth();
 			}
+			return true;
+		case 9:
+			/* Restart the game */
+			GestureDefence.this.theWave.setWaveNumber(1);
+			GestureDefence.this.sKillCount = 0;
+			GestureDefence.this.sPreviousKillCount = 0;
+			GestureDefence.this.sPreviousWaveNum = 0;
+			GestureDefence.this.sMoney = 0;
+			GestureDefence.this.mMoneyEarned = 0;
+			GestureDefence.this.sEnemyCount = 0;
+			GestureDefence.this.updateCashValue();
+			GestureDefence.this.sCastle.setCurrentHealth(3000);
+			GestureDefence.this.sCastle.setMaxHealth(3000);
+			GestureDefence.this.updateCastleHealth();
+			GestureDefence.this.mana = 0;
+			GestureDefence.this.updateManaValue();
+			
+			/*remove all sprite's still in the game (enemies etc)
+			 * This needs optimising, like making it only remove enemies!
+			 */
+			GestureDefence.this.sm.GameScreen.detachChildren();
+			
+			//Reload the castle, since it has now been removed
+			GestureDefence.this.loadCastle(GestureDefence.this.getCameraWidth() - (GestureDefence.this.getCastleTexture().getWidth()), GestureDefence.this.getCameraHeight() - 60 - GestureDefence.this.getCastleTexture().getHeight());
+			
+			GestureDefence.this.getEngine().setScene(GestureDefence.this.sm.MainMenu);
 			return true;
 		case 99:
 			/* Quits the Game */
@@ -663,17 +693,18 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			output.close();
 			fos.close();
 			
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Saved!", Toast.LENGTH_LONG).show();
+			//Removed, it breaks, need to work out why!
+			//Toast.makeText(GestureDefence.this, "Game Saved!", Toast.LENGTH_SHORT).show();
 			
 			return true;
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Save failed. Failed to create file!", Toast.LENGTH_LONG).show();
+			Toast.makeText(GestureDefence.this, "Game Save failed. Failed to create file!", Toast.LENGTH_LONG).show();
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Save failed. Conversion errors", Toast.LENGTH_LONG).show();
+			Toast.makeText(GestureDefence.this, "Game Save failed. Conversion errors", Toast.LENGTH_LONG).show();
 			return false;
 		}
 	}
@@ -757,18 +788,19 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			GestureDefence.this.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
 			GestureDefence.this.mana = Integer.parseInt(manaLevel);
 			
+			//Toast.makeText(GestureDefence.this, "Game Loaded!", Toast.LENGTH_SHORT).show();
+			GestureDefence.this.gameLoaded = true;
 			GestureDefence.this.ButtonPress(3);			
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game Loaded!", Toast.LENGTH_LONG).show();
 			
 			return true;
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
+			Toast.makeText(GestureDefence.this, "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
-			Toast.makeText(GestureDefence.this.getApplicationContext(), "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
+			Toast.makeText(GestureDefence.this, "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
 			return false;
 		}
 	}
@@ -782,9 +814,9 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			if (predictions.size() > 0) {
 				Prediction prediction = predictions.get(0);
 				if (prediction.score > 1.0) {
-					if ((GestureDefence.this.mana - 100) >= 0)
+					if ((GestureDefence.this.mana - 1000) >= 0)
 					{
-						GestureDefence.this.mana -= 100;
+						GestureDefence.this.mana -= 1000;
 						GestureDefence.this.ligtningStrike.play();
 						//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
 						
@@ -795,7 +827,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 						lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
 						lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
 						GestureDefence.this.sm.GameScreen.attachChild(lightning);
-						GestureDefence.this.mLightningBoltX = posX;
+						GestureDefence.this.mLightningBoltX = tempThing.left + (tempThing.width() / 2);
+						GestureDefence.this.mLightningBoltY = tempThing.bottom; //Get the bottom of the gesture (should be where the lightning strike ends)
 						GestureDefence.this.mLightningBolt = true;
 						
 						GestureDefence.this.updateManaValue();

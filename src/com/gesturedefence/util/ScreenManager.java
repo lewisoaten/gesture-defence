@@ -16,6 +16,8 @@ import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.util.HorizontalAlign;
 
+import android.widget.Toast;
+
 import com.gesturedefence.GestureDefence;
 
 public class ScreenManager {
@@ -112,6 +114,7 @@ public class ScreenManager {
 			base.ambient.setLooping(true);
 			base.ambient.play();
 		}
+		
 		if (base.gethud() != null)
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
@@ -134,6 +137,13 @@ public class ScreenManager {
 				@Override
 				public void onUpdate(float pSecondsElapsed) {
 					/* On every update */
+					if (base.gameLoaded)
+					{
+						base.gameLoaded = false;
+						//Remove? Cause a crash, can't work out why.. annoying!
+						//Toast.makeText(base.getApplication(), "Game Loaded!", Toast.LENGTH_SHORT).show();
+					}					
+					
 					if (base.sPreviousWaveNum != base.theWave.getWaveNumber() && base.sKillCount != base.sPreviousKillCount)
 						if ((base.sKillCount - base.sPreviousKillCount) == base.theWave.getNumberEnemysToSpawn())
 						{
@@ -155,6 +165,8 @@ public class ScreenManager {
 									public void onTimePassed(TimerHandler pTimerHandler) {
 										base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
 										base.mLightningBolt = false;
+										base.mLightningBoltX = 0;
+										base.mLightningBoltY = 0;
 									}
 								}));
 						}
@@ -253,6 +265,7 @@ public class ScreenManager {
 		base.theWave.mBuyMenuItem.setPosition(100, 160);
 		base.complete.play();
 		base.getEngine().setScene(EndWaveScene);
+		base.savegame();
 	}
 	
 	public void GameOverScreen()
@@ -273,9 +286,11 @@ public class ScreenManager {
 					base.mMoneyEarned = 0;
 					base.sEnemyCount = 0;
 					base.updateCashValue();
-					base.sCastle.increaseHealth(3000);
+					base.sCastle.setCurrentHealth(3000);
 					base.sCastle.setMaxHealth(3000);
 					base.updateCastleHealth();
+					base.mana = 0;
+					base.updateManaValue();
 					
 					/*remove all sprite's still in the game (enemies etc)
 					 * This needs optimising, like making it only remove enemies!
@@ -318,8 +333,19 @@ public class ScreenManager {
 				}
 			};
 			
+			Text restartText = new Text( someText.getX(), someText.getY() - someText.getHeight(), base.mFont, "Restart")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.ButtonPress(9);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			PauseScreen.registerTouchArea(someText);
+			PauseScreen.registerTouchArea(restartText);
 			PauseScreen.attachChild(someText);
+			PauseScreen.attachChild(restartText);
 		}		
 		
 		if (base.gethud() != null)

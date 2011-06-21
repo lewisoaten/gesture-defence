@@ -100,7 +100,7 @@ public class Wave {
 						{
 							/* Start a spawn */
 							final float xPos = 0 - 64;
-							/* Allow for future adverts height ?*/
+							/* Allow for ?*/
 							final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
 							
 							if ( (difficultyChance == randomChance) && (Wave.sWaveNumber >= 5) )

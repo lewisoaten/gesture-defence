@@ -35,6 +35,7 @@ public class Enemy extends AnimatedSprite {
 		private float mGravity = 9.86f; //Gravity value for velocity, may move to global variable, 1 enemy = no problem, 2+ enemies = need global gravity
 		private float mMoveDelay = 0.0f; //Used to store how long enemy was dragged
 		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
+		private float mMoveY = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
 		private float mGroundHitSpeed = 0.0f; //Used for damage calculations
 		private float mInitialY = this.getY(); //used to keep track of each enemy's ground level
 		
@@ -56,11 +57,7 @@ public class Enemy extends AnimatedSprite {
 		
 		private boolean mTripping = false; //Is the enemy tripping
 		
-		/* Don't work, needs some adjusting! */
-//		private float mHoldX = 0.0f; //Used to work out hold delay
-//		private float mHoldY = 0.0f; //Used to work out hold delay
-//		private boolean mMoved = false; //Used to work out hold delay
-//		private float mMoveY = 0.0f; //Used to calculate Y velocity on move
+		private float mMaxspeed = 0.0f; //Each enemy is given a top top speed, as wave's progress, don't want streaks of lightning as motion :)
 	
 	// ========================================
 	// Constructors
@@ -72,20 +69,35 @@ public class Enemy extends AnimatedSprite {
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
 			this.base = base;
+			float speed = 0.0f;
 			
 			switch (type) {
 			case 1:
 				this.mCashWorth = 40;
 				this.mAttackDamage = 10.0f;
 				this.mHealth = 150.0f;
-				this.mSpeed = MathUtils.random(6.5f,25.0f);
+				this.mMaxspeed = 80.0f;
+				
+				speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(),25.0f  + base.theWave.getWaveNumber());
+				if (speed < this.mMaxspeed)
+					this.mSpeed = speed;
+				else
+					this.mSpeed = this.mMaxspeed;
+				
 				this.mEnemyType = 1;
 				break;
 			case 2:
 				this.mCashWorth = 150;
 				this.mAttackDamage = 100.0f;
 				this.mHealth = 670.0f;
-				this.mSpeed = MathUtils.random(18.0f,40.0f);
+				this.mMaxspeed = 90.0f;
+				
+				speed = MathUtils.random(18.0f + base.theWave.getWaveNumber(), 40.0f + base.theWave.getWaveNumber());
+				if (speed < this.mMaxspeed)
+					this.mSpeed = speed;
+				else
+					this.mSpeed = this.mMaxspeed;
+				
 				this.mEnemyType = 2;
 				break;
 				
@@ -105,9 +117,13 @@ public class Enemy extends AnimatedSprite {
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed)
 		{
-			if ((base.mLightningBolt == true) && (this.mX <= base.mLightningBoltX + 30) && (this.mX >= base.mLightningBoltX - 30) )
+			if ((base.mLightningBolt == true)
+					&& (this.mX <= base.mLightningBoltX + 50)
+					&& (this.mX >= base.mLightningBoltX - 50)
+					&& (this.mY >= base.mLightningBoltY - 70)
+					&& (this.mY <= base.mLightningBoltY + 70))
 			{
-				this.EnemyHurtFace(1000);
+				this.EnemyHurtFace(1000); //Lol's, gave it a random name, no idea why! Probably because I could
 			}
 			if (isEnemyDead())
 			{
@@ -291,12 +307,13 @@ public class Enemy extends AnimatedSprite {
 						this.mCanAttackCastle = false;
 						mMoveDelay = 0.0f;
 						mMoveX = this.mX;
+						mMoveY = this.mY;
 						mTimeMoved = new TimerHandler(1 / 4.0f, true, new ITimerCallback()
 						{
 							@Override
 							public void onTimePassed(final TimerHandler pTimerHandler)
 							{
-								//Tried working out position, went wrong...late night!
+								//Do nothing, simply a timer for use in Action_UP
 							}
 						});
 						this.registerUpdateHandler(this.mTimeMoved);
@@ -326,9 +343,12 @@ public class Enemy extends AnimatedSprite {
 						this.unregisterUpdateHandler(this.mTimeMoved);
 						
 						float mDiffX = this.mX - mMoveX;
-						float mDiffY = this.mY - this.mInitialY;
-						float mVelocityX = mDiffX * 10;
-						float mVelocityY = mDiffY * 10;
+						float mDiffY = this.mY - mMoveY;
+						mDiffX = mDiffX / mMoveDelay;
+						mDiffY = mDiffY / mMoveDelay;
+						
+						float mVelocityX = mMoveDelay * (mDiffX / 2);
+						float mVelocityY = mMoveDelay * (mDiffY / 2);
 						
 						//Check to see how far it moved, if it didn't move far at all, make them trip up instead
 						if ( (mDiffY > -10.0f) )
@@ -340,8 +360,8 @@ public class Enemy extends AnimatedSprite {
 						else
 						{
 							this.mPhysicsHandler.setEnabled(true);						
-							this.mPhysicsHandler.setVelocityX(mVelocityX * mMoveDelay * 10);
-							this.mPhysicsHandler.setVelocityY(mVelocityY * mMoveDelay * 10);
+							this.mPhysicsHandler.setVelocityX(mVelocityX);
+							this.mPhysicsHandler.setVelocityY(mVelocityY);
 						}
 						
 						mTimerHandler = false;
