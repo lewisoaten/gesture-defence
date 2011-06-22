@@ -41,21 +41,25 @@ public class ScreenManager {
 	public Scene EndWaveScene;
 	public Scene GameOverScene;
 	public Scene PauseScreen;
+	public Scene QuitMenu;
+	public Scene NewGameWarning;
+	
+	private Scene QuitMenuCameFrom;
 	
 	private ChangeableText scorebits;
+	private ChangeableText mainMenuWaveNumber;
 	
 	// ========================================
 	// Constructors
 	// ========================================
 	
+	public ScreenManager(GestureDefence base) {
+		this.base = base;
+	}
+	
 	// ========================================
 	// Getter & Setter
 	// ========================================
-	
-	public ScreenManager(GestureDefence base)
-	{
-		this.base = base;
-	}
 	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
@@ -82,7 +86,19 @@ public class ScreenManager {
 			Sprite startButton = new Sprite(buttonX, buttonY, base.getStartButtonRegion()) {
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
-					base.ButtonPress(1);
+					if (base.fileThingy.CheckForSaveFile(base)) // Check for save file
+						base.sm.ShowNewGameWarning(); // If there is one warn!
+					else
+						base.ButtonPress(1); // If not, carry on
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			mainMenuWaveNumber = new ChangeableText(30, buttonY - startButton.getHeight(), base.mFont2, "Start From Last Wave: XXXXXX", "Start From Last Wave: XXXXXX".length())
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.fileThingy.loadSaveFile(base);					
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};
@@ -98,16 +114,16 @@ public class ScreenManager {
 				}
 			};
 			
-			Text LOADGame = new Text(10, 10, base.mFont2, "Load Game Save")
+			Text LOADGame = new Text(10, 10, base.mFont2, "") //Remove? Loads with wave number now!
 			{
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
-					base.loadSaveFile();					
+					//base.loadSaveFile();
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};
 			
-			Text openFeintOption = new Text(10, base.getCameraHeight() - LOADGame.getHeight(), base.mFont2, "Load Game Save")
+			Text openFeintOption = new Text(10, base.getCameraHeight() - LOADGame.getHeight(), base.mFont2, "OpenFeint")
 			{
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
@@ -120,10 +136,12 @@ public class ScreenManager {
 			MainMenu.attachChild(quitButton);
 			MainMenu.attachChild(LOADGame);
 			MainMenu.attachChild(openFeintOption);
+			MainMenu.attachChild(mainMenuWaveNumber);
 			MainMenu.registerTouchArea(startButton);
 			MainMenu.registerTouchArea(quitButton);
 			MainMenu.registerTouchArea(LOADGame);
 			MainMenu.registerTouchArea(openFeintOption);
+			MainMenu.registerTouchArea(mainMenuWaveNumber);
 			MainMenu.setTouchAreaBindingEnabled(true);
 			
 			base.ambient.setLooping(true);
@@ -133,7 +151,10 @@ public class ScreenManager {
 		if (base.gethud() != null)
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
+		
 		base.getEngine().setScene(MainMenu);
+		
+		mainMenuWaveNumber.setText("Start From Last Wave: " + base.fileThingy.getLastWaveFromSaveFile(base));
 	}
 	
 	public void GameScreen()
@@ -152,13 +173,6 @@ public class ScreenManager {
 				@Override
 				public void onUpdate(float pSecondsElapsed) {
 					/* On every update */
-					if (base.gameLoaded)
-					{
-						base.gameLoaded = false;
-						//Remove? Cause a crash, can't work out why.. annoying!
-						//Toast.makeText(base.getApplication(), "Game Loaded!", Toast.LENGTH_SHORT).show();
-					}					
-					
 					if (base.sPreviousWaveNum != base.theWave.getWaveNumber() && base.sKillCount != base.sPreviousKillCount)
 						if ((base.sKillCount - base.sPreviousKillCount) == base.theWave.getNumberEnemysToSpawn())
 						{
@@ -256,7 +270,7 @@ public class ScreenManager {
 			{
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
-					base.savegame();					
+					base.fileThingy.savegame(base);					
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};
@@ -276,11 +290,12 @@ public class ScreenManager {
 		if (base.gethud() != null)
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
+		
 		base.theWave.mCashAmountItem.setPosition(100, 100);
 		base.theWave.mBuyMenuItem.setPosition(100, 160);
 		base.complete.play();
 		base.getEngine().setScene(EndWaveScene);
-		base.savegame();
+		base.fileThingy.savegame(base);
 	}
 	
 	public void GameOverScreen()
@@ -342,10 +357,12 @@ public class ScreenManager {
 				//base.finish(); //Dur dum feature!
 			}
 
-			@Override public void onFailure(String exceptionMessage) {
-				Toast.makeText(base,
-				"Error (" + exceptionMessage + ") posting score.",
-				Toast.LENGTH_SHORT).show();
+			@Override public void onFailure(final String exceptionMessage) {
+				base.handler.post(new Runnable() {
+					public void run() {
+						Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") posting score.", Toast.LENGTH_SHORT).show();
+					}
+				});
 				base.setResult(Activity.RESULT_CANCELED);
 				//base.finish();
 			}
@@ -396,7 +413,88 @@ public class ScreenManager {
 		if (base.gethud() != null)
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
+		
 		base.getEngine().setScene(PauseScreen);
+	}
+	
+	public void loadQuitMenu(Scene TheSceneFrom) {
+		this.QuitMenuCameFrom = TheSceneFrom;
+		
+		if (QuitMenu == null)
+		{
+			QuitMenu = new Scene(1);
+			
+			Text areyouSure = new Text( 30, (base.getCameraHeight() / 2) - 10, base.mFont, "Are you sure you want to quit?");
+			
+			Text YesOption = new Text( areyouSure.getX(), areyouSure.getY() + areyouSure.getHeight(), base.mFont, "YES")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.ButtonPress(99);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			Text NoOption = new Text( YesOption.getX() + YesOption.getWidth() + 20, areyouSure.getY() + areyouSure.getHeight(), base.mFont, "NO")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.getEngine().setScene(QuitMenuCameFrom);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			QuitMenu.attachChild(areyouSure);
+			QuitMenu.attachChild(YesOption);
+			QuitMenu.attachChild(NoOption);
+			QuitMenu.registerTouchArea(YesOption);
+			QuitMenu.registerTouchArea(NoOption);
+		}
+		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
+		
+		base.getEngine().setScene(QuitMenu);
+	}
+	
+	public void ShowNewGameWarning() {
+		if (NewGameWarning == null)
+		{
+			NewGameWarning = new Scene(1);
+			
+			Text areyouSure = new Text( 30, (base.getCameraHeight() / 2) - 10, base.mFont2, "Starting a new Game will overwrite previous save!");
+			
+			Text YesOption = new Text( areyouSure.getX(), areyouSure.getY() + areyouSure.getHeight(), base.mFont, "YES")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.ButtonPress(1);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			Text NoOption = new Text( YesOption.getX() + YesOption.getWidth() + 20, areyouSure.getY() + areyouSure.getHeight(), base.mFont, "NO")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.getEngine().setScene(MainMenu);
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			NewGameWarning.attachChild(areyouSure);
+			NewGameWarning.attachChild(YesOption);
+			NewGameWarning.attachChild(NoOption);
+			NewGameWarning.registerTouchArea(YesOption);
+			NewGameWarning.registerTouchArea(NoOption);
+		}
+		
+		if (base.gethud() != null)
+			if (base.gethud().isVisible())
+				base.gethud().setVisible(false);
+		
+		base.getEngine().setScene(NewGameWarning);
 	}
 	
 	// ========================================

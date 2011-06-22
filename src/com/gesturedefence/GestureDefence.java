@@ -5,14 +5,7 @@ package com.gesturedefence;
  * @since 12:43:16 - 12 Jun 2011
  */
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
 import org.anddev.andengine.audio.music.Music;
@@ -50,7 +43,6 @@ import org.anddev.andengine.ui.activity.LayoutGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
-import android.content.Context;
 import android.gesture.Gesture;
 import android.gesture.GestureLibraries;
 import android.gesture.GestureLibrary;
@@ -60,6 +52,7 @@ import android.gesture.Prediction;
 import android.graphics.Color;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.widget.Toast;
@@ -67,6 +60,7 @@ import android.widget.Toast;
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.Atracker;
+import com.gesturedefence.util.FileOperations;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
 import com.openfeint.api.OpenFeint;
@@ -182,9 +176,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public int mana = 0; //Mana levels
 	
-	public boolean gameLoaded = false; //Used to show game loaded toast
-	
 	public Atracker AchieveTracker;
+	
+	public FileOperations fileThingy;
+	
+	public Handler handler = new Handler(); //Used to fix null context problems! (Toast's...I'm looking at you)
 	
 	// ========================================
 	// Constructors
@@ -277,13 +273,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) { //Purely to get gestures loading and detecting!
-		super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState);		
 		GestureDefence.this.mLibrary = GestureLibraries.fromRawResource(GestureDefence.this, R.raw.spells);
 		if (!mLibrary.load()) {
 			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_SHORT).show();
-		}
-		else
-			Toast.makeText(this, "Gesture library loaded", Toast.LENGTH_SHORT).show();
+		};
 		
 		gestures = (GestureOverlayView) findViewById(R.id.gestures);
 		gestures.setWillNotDraw(true);
@@ -434,6 +428,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				
 				GestureDefence.this.AchieveTracker = new Atracker(GestureDefence.this);
 				
+				GestureDefence.this.fileThingy = new FileOperations(GestureDefence.this);
+				
 				SoundFactory.setAssetBasePath("sfx/");
 				try {
 					//Sound effects
@@ -457,8 +453,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 					//File not found
 				}
 				
-				if (GestureDefence.this.loadSaveFile() == false)
-					GestureDefence.this.sm.loadMainMenu();
+				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
 		
@@ -482,6 +477,14 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			else if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.PauseScreen)
 			{ //Close pause screen and return to game
 				GestureDefence.this.sm.GameScreen();
+			}			
+			return true;
+		}
+		if (pKeyCode == KeyEvent.KEYCODE_BACK && pEvent.getAction() == KeyEvent.ACTION_DOWN)
+		{ //Back key pressed!
+			if (GestureDefence.this.getEngine().getScene() != GestureDefence.this.sm.MainMenu)
+			{
+				GestureDefence.this.sm.loadQuitMenu(GestureDefence.this.getEngine().getScene());
 			}
 			return true;
 		}
@@ -664,158 +667,6 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		sManaText.setText("" + GestureDefence.this.mana);
 	}
 	
-	public boolean savegame()
-	{ //Self explanatory ?
-		String FILENAME = "save_game_file";
-		
-		try {
-			FileOutputStream fos = openFileOutput(FILENAME, Context.MODE_PRIVATE);
-			OutputStreamWriter output = new OutputStreamWriter(fos);
-			BufferedWriter buf = new BufferedWriter(output);
-			
-			String killCount = "#1:" + GestureDefence.this.sKillCount;
-			String waveNumber = "#2:" + (GestureDefence.this.theWave.getWaveNumber());
-			String currentCash = "#3:" + GestureDefence.this.sMoney;
-			String totalCash = "#4:" + GestureDefence.this.mMoneyEarned;
-			String currentHealth = "#5:" + GestureDefence.this.sCastle.getCurrentHealth();
-			String maxHealth = "#6:" + GestureDefence.this.sCastle.getMaxHealth();
-			String previousKills = "#7:" + GestureDefence.this.sPreviousKillCount;
-			String manaLevel = "#8:" + GestureDefence.this.mana;
-			
-			buf.write(killCount);
-			buf.newLine();
-			buf.write(waveNumber);
-			buf.newLine();
-			buf.write(currentCash);
-			buf.newLine();
-			buf.write(totalCash);
-			buf.newLine();
-			buf.write(currentHealth);
-			buf.newLine();
-			buf.write(maxHealth);
-			buf.newLine();
-			buf.write(previousKills);
-			buf.newLine();
-			buf.write(manaLevel);
-			buf.newLine();
-			
-			buf.close();
-			output.close();
-			fos.close();
-			
-			//Removed, it breaks, need to work out why!
-			//Toast.makeText(GestureDefence.this, "Game Saved!", Toast.LENGTH_SHORT).show();
-			
-			return true;
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			Toast.makeText(GestureDefence.this, "Game Save failed. Failed to create file!", Toast.LENGTH_LONG).show();
-			return false;
-		} catch (IOException e) {
-			e.printStackTrace();
-			Toast.makeText(GestureDefence.this, "Game Save failed. Conversion errors", Toast.LENGTH_LONG).show();
-			return false;
-		}
-	}
-	
-	public boolean loadSaveFile()
-	{ //Self explanatory ?
-		String FILENAME = "save_game_file";
-		String string = "";
-		String killCount = "0";
-		String waveNumber = "0";
-		String currentCash = "0";
-		String totalCash = "0";
-		String currentHealth = "3000";
-		String maxHealth = "3000";
-		String prevKills = "0";
-		String manaLevel = "0";
-		
-		try {
-			FileInputStream fis = openFileInput(FILENAME);
-			InputStreamReader inputreader = new InputStreamReader(fis);
-			BufferedReader buffreader = new BufferedReader(inputreader);
-			string = buffreader.readLine();
-			
-			while ( string != null)
-			{
-				// stuff
-				if (string.contains("#1:"))
-				{
-					int pos = string.indexOf(":");
-					killCount = string.substring(pos + 1);
-				}
-				if (string.contains("#2:"))
-				{
-					int pos = string.indexOf(":");
-					waveNumber = string.substring(pos + 1);
-				}
-				if (string.contains("#3:"))
-				{
-					int pos = string.indexOf(":");
-					currentCash = string.substring(pos + 1);
-				}
-				if (string.contains("#4:"))
-				{
-					int pos = string.indexOf(":");
-					totalCash = string.substring(pos + 1);
-				}
-				if (string.contains("#5:"))
-				{
-					int pos = string.indexOf(":");
-					currentHealth = string.substring(pos + 1);
-				}
-				if (string.contains("#6:"))
-				{
-					int pos = string.indexOf(":");
-					maxHealth = string.substring(pos + 1);
-				}
-				if (string.contains("#7:"))
-				{
-					int pos = string.indexOf(":");
-					prevKills = string.substring(pos + 1);
-				}
-				if (string.contains("#8:"))
-				{
-					int pos = string.indexOf(":");
-					manaLevel = string.substring(pos + 1);
-				}
-				
-				string = buffreader.readLine();
-			}
-			
-			buffreader.close();
-			inputreader.close();
-			fis.close();
-			
-			GestureDefence.this.sKillCount = Integer.parseInt(killCount);
-			GestureDefence.this.sPreviousKillCount = Integer.parseInt(prevKills);
-			GestureDefence.this.theWave.setWaveNumber(Integer.parseInt(waveNumber));
-			GestureDefence.this.sMoney = Integer.parseInt(currentCash);
-			GestureDefence.this.mMoneyEarned = Integer.parseInt(totalCash);
-			GestureDefence.this.sCastle.setCurrentHealth(Integer.parseInt(currentHealth));
-			GestureDefence.this.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
-			GestureDefence.this.mana = Integer.parseInt(manaLevel);
-			
-			//Toast.makeText(GestureDefence.this, "Game Loaded!", Toast.LENGTH_SHORT).show();
-			GestureDefence.this.gameLoaded = true;
-			GestureDefence.this.ButtonPress(3);			
-			
-			return true;
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			Toast.makeText(GestureDefence.this, "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
-			return false;
-		} catch (IOException e) {
-			e.printStackTrace();
-			Toast.makeText(GestureDefence.this, "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
-			return false;
-		}
-	}
-
-	
 	public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) { //Used to detect the gesture!!
 		ArrayList<Prediction> predictions = mLibrary.recognize(gesture);
 		
@@ -828,7 +679,6 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 					{
 						GestureDefence.this.mana -= 1000;
 						GestureDefence.this.ligtningStrike.play();
-						//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
 						
 						RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
 						float posX;

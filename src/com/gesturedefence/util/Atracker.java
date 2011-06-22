@@ -73,6 +73,12 @@ public class Atracker {
 	// Methods
 	// ========================================
 		
+		/*
+		 * Using variable for each acheivement to check progress
+		 * should prevent excessive network spam (usage!)
+		 * Once a achievement is done it wont query the openfeint server's again!
+		 */
+		
 		public void firstKill() {
 			if (this.of1048612 == false && this.of1048612Loaded)
 			{
@@ -82,11 +88,12 @@ public class Atracker {
 						of1048612 = complete;
 					}
 	
-					@Override public void onFailure(String exceptionMessage) {
-						Toast.makeText( base,
-							"Error (" + exceptionMessage + ") unlocking achievement.",
-							Toast.LENGTH_SHORT).show();
-	
+					@Override public void onFailure(final String exceptionMessage) {
+						base.handler.post(new Runnable() {
+							public void run() {
+								Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") unlocking achievement.", Toast.LENGTH_SHORT).show();
+							}
+						});
 						base.setResult(Activity.RESULT_CANCELED);
 					}
 				});
@@ -109,8 +116,12 @@ public class Atracker {
 					}
 					
 					@Override
-					public void onFailure(String exceptionMessage) {
-						Toast.makeText(base, "Error (" + exceptionMessage + ") updating achievement.", Toast.LENGTH_SHORT).show();
+					public void onFailure(final String exceptionMessage) {
+						base.handler.post(new Runnable() {
+							public void run() {
+								Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") updating achievement.", Toast.LENGTH_SHORT).show();
+							}
+						});
 					}
 				});
 			}
