@@ -16,9 +16,13 @@ import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.util.HorizontalAlign;
 
+import android.app.Activity;
 import android.widget.Toast;
 
 import com.gesturedefence.GestureDefence;
+import com.openfeint.api.resource.Leaderboard;
+import com.openfeint.api.resource.Score;
+import com.openfeint.api.ui.Dashboard;
 
 public class ScreenManager {
 	
@@ -103,12 +107,23 @@ public class ScreenManager {
 				}
 			};
 			
+			Text openFeintOption = new Text(10, base.getCameraHeight() - LOADGame.getHeight(), base.mFont2, "Load Game Save")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					Dashboard.open();
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			MainMenu.attachChild(startButton);
 			MainMenu.attachChild(quitButton);
 			MainMenu.attachChild(LOADGame);
+			MainMenu.attachChild(openFeintOption);
 			MainMenu.registerTouchArea(startButton);
 			MainMenu.registerTouchArea(quitButton);
 			MainMenu.registerTouchArea(LOADGame);
+			MainMenu.registerTouchArea(openFeintOption);
 			MainMenu.setTouchAreaBindingEnabled(true);
 			
 			base.ambient.setLooping(true);
@@ -316,6 +331,25 @@ public class ScreenManager {
 				base.gethud().setVisible(false);
 		base.game_over.play();
 		base.getEngine().setScene(GameOverScene);
+		
+		long scoreValue = base.theWave.getWaveNumber();
+		Score s = new Score(scoreValue, null); // Second parameter is null to indicate that custom display text is not used.
+		Leaderboard l = new Leaderboard("794006");
+		s.submitTo(l, new Score.SubmitToCB() {
+			@Override public void onSuccess(boolean newHighScore) {
+				// sweet, score was posted
+				base.setResult(Activity.RESULT_OK);
+				//base.finish(); //Dur dum feature!
+			}
+
+			@Override public void onFailure(String exceptionMessage) {
+				Toast.makeText(base,
+				"Error (" + exceptionMessage + ") posting score.",
+				Toast.LENGTH_SHORT).show();
+				base.setResult(Activity.RESULT_CANCELED);
+				//base.finish();
+			}
+		});
 	}
 	
 	public void loadPauseScreen()
@@ -342,10 +376,21 @@ public class ScreenManager {
 				}
 			};
 			
+			Text openFeintText = new Text( someText.getX(), someText.getY() + someText.getHeight(), base.mFont, "OpenFeint Menu")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					Dashboard.open();
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			PauseScreen.registerTouchArea(someText);
 			PauseScreen.registerTouchArea(restartText);
+			PauseScreen.registerTouchArea(openFeintText);
 			PauseScreen.attachChild(someText);
 			PauseScreen.attachChild(restartText);
+			PauseScreen.attachChild(openFeintText);
 		}		
 		
 		if (base.gethud() != null)

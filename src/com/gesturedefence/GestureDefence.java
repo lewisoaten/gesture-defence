@@ -66,6 +66,7 @@ import android.widget.Toast;
 
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
+import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
 import com.openfeint.api.OpenFeint;
@@ -182,6 +183,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public int mana = 0; //Mana levels
 	
 	public boolean gameLoaded = false; //Used to show game loaded toast
+	
+	public Atracker AchieveTracker;
 	
 	// ========================================
 	// Constructors
@@ -428,6 +431,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				//Setup the castle, but don't actually attach it yet!
 				GestureDefence.this.sCastle = new Castle(0, 0, GestureDefence.this.mCastleTextureRegion);
 				GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
+				
+				GestureDefence.this.AchieveTracker = new Atracker(GestureDefence.this);
 				
 				SoundFactory.setAssetBasePath("sfx/");
 				try {

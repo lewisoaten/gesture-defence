@@ -15,7 +15,11 @@ import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.MathUtils;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolItem;
 
+import android.widget.Toast;
+
 import com.gesturedefence.GestureDefence;
+import com.gesturedefence.util.Atracker;
+import com.openfeint.api.resource.Achievement;
 
 public class Enemy extends AnimatedSprite {
 	// ========================================
@@ -58,6 +62,8 @@ public class Enemy extends AnimatedSprite {
 		private boolean mTripping = false; //Is the enemy tripping
 		
 		private float mMaxspeed = 0.0f; //Each enemy is given a top top speed, as wave's progress, don't want streaks of lightning as motion :)
+		
+		private boolean mWasAirborne = false; //Used to track some achievements
 	
 	// ========================================
 	// Constructors
@@ -162,7 +168,9 @@ public class Enemy extends AnimatedSprite {
 					final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
 					//Use set, NOT setEntity, if no parent, null pointer exception!
 					pPoolItem.set(this,this.getParent());
-					base.sRemoveStuff.postPoolItem(pPoolItem);					
+					base.sRemoveStuff.postPoolItem(pPoolItem);
+					
+					base.AchieveTracker.firstKill(); //Boom kill
 				}
 			}
 			else
@@ -181,6 +189,12 @@ public class Enemy extends AnimatedSprite {
 						this.mTripping = false;
 						this.mPhysicsHandler.setEnabled(true);
 						base.sm.GameScreen.registerTouchArea(this);
+						if (this.mWasAirborne == false)
+						{
+							base.AchieveTracker.Trips(); //Trip that bitch!							
+						}
+						else
+							this.mWasAirborne = false;
 					}
 				}
 				
@@ -362,6 +376,7 @@ public class Enemy extends AnimatedSprite {
 							this.mPhysicsHandler.setEnabled(true);						
 							this.mPhysicsHandler.setVelocityX(mVelocityX);
 							this.mPhysicsHandler.setVelocityY(mVelocityY);
+							this.mWasAirborne = true;
 						}
 						
 						mTimerHandler = false;
