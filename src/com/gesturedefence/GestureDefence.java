@@ -831,14 +831,44 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 						//Toast.makeText(this, prediction.name, Toast.LENGTH_SHORT).show();
 						
 						RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
-						float posX = tempThing.left; //Take the left hand side as the X position
-						float posY = tempThing.bottom - 330; //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
+						float posX;
+						float posY;
+						float lightningPosX;
+						float lightningPosY;
+						/* 
+						 * Check the left/right and top/bottom values
+						 * The returned bounding box rectangle is not aware which side is which
+						 * ie: Left < Right, Top > Bottom
+						 * (or in gaming case's, Top < Bottom , Y is reversed)
+						 */
+						
+						if (tempThing.left < tempThing.right)
+						{ //Work out the left hand side, the X position
+							posX = tempThing.left;
+							lightningPosX = posX + ((tempThing.right - tempThing.left) / 2);
+						}
+						else
+						{ //Bounding box has right as left!
+							posX = tempThing.right;
+							lightningPosX = posX + ((tempThing.left - tempThing.left) / 2);
+						}
+						
+						if (tempThing.bottom > tempThing.top) 
+						{ //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
+							posY = tempThing.bottom - 330;
+							lightningPosY = tempThing.bottom;
+						}
+						else
+						{ //Bounding box has bottom as top!
+							posY = tempThing.top - 330;
+							lightningPosY = tempThing.top;
+						}
 						
 						lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
 						lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
 						GestureDefence.this.sm.GameScreen.attachChild(lightning);
-						GestureDefence.this.mLightningBoltX = tempThing.left + (tempThing.width() / 2);
-						GestureDefence.this.mLightningBoltY = tempThing.bottom; //Get the bottom of the gesture (should be where the lightning strike ends)
+						GestureDefence.this.mLightningBoltX = lightningPosX;
+						GestureDefence.this.mLightningBoltY = lightningPosY;
 						GestureDefence.this.mLightningBolt = true;
 						
 						GestureDefence.this.updateManaValue();

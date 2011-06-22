@@ -124,10 +124,10 @@ public class Enemy extends AnimatedSprite {
 		public void onManagedUpdate(final float pSecondsElapsed)
 		{
 			if ((base.mLightningBolt == true)
-					&& (this.mX <= base.mLightningBoltX + 50)
-					&& (this.mX >= base.mLightningBoltX - 50)
-					&& (this.mY >= base.mLightningBoltY - 70)
-					&& (this.mY <= base.mLightningBoltY + 70))
+					&& (this.mX <= base.mLightningBoltX + 100)
+					&& (this.mX >= base.mLightningBoltX - 100)
+					&& (this.mY >= base.mLightningBoltY - 50)
+					&& (this.mY <= base.mLightningBoltY + 30))
 			{
 				this.EnemyHurtFace(1000); //Lol's, gave it a random name, no idea why! Probably because I could
 			}
