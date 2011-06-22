@@ -1,3 +1,5 @@
+01:04 22/06/2011 - Added intial support for OpenFeint. You will need to download the SDK seperatly for openfeint and then add it as a library into this project!
+
 Currently the waves are infinite!
 
 I have as yet to test how far and well the waves go.

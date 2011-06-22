@@ -62,13 +62,15 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
+import com.openfeint.api.OpenFeint;
+import com.openfeint.api.OpenFeintDelegate;
+import com.openfeint.api.OpenFeintSettings;
 
 public class GestureDefence extends LayoutGameActivity implements IOnMenuItemClickListener, OnGesturePerformedListener {
 	// ========================================
@@ -78,14 +80,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	private static int CAMERA_WIDTH = 800; //Default camera width of the window
 	private static int CAMERA_HEIGHT = 480; //Default camera height of the window
 	
-	
 	//buttons below, arnt really used now, may/will be removed at a later date
-	private static final int MENU_START = 0;
-	private static final int MENU_QUIT = MENU_START + 1;
-	private static final int MENU_RESTART = MENU_QUIT + 1;
-	public static final int MENU_BUY_HEALTH = MENU_RESTART + 1;
-	public static final int MENU_START_NEXT_WAVE = MENU_BUY_HEALTH + 1;
-	public static final int MENU_HEALTH = MENU_START_NEXT_WAVE + 1;
+	public static final int MENU_HEALTH = 1;
 	public static final int MENU_CASH = MENU_HEALTH + 1;
 	public static final int MENU_WAVE_NUMBER = MENU_CASH + 1;
 	
@@ -289,7 +285,16 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		gestures = (GestureOverlayView) findViewById(R.id.gestures);
 		gestures.setWillNotDraw(true);
 		gestures.setWillNotCacheDrawing(true);
-		gestures.addOnGesturePerformedListener(this);		
+		gestures.addOnGesturePerformedListener(this);
+		
+		/* OpenFeint Setup */
+		final String OFgameName = "Gesture_Defence";
+		final String OFgameId = "311002";
+		final String OFgameKey = "kbzd0VQKbwIcYAPF8sQRIg";
+		final String OFgameSecret = "j09MMl5XeCtYZMHFRBolC8ESCB08QZVjFYBbzhgn8";
+		
+		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
+		OpenFeint.initialize(this, settings, new OpenFeintDelegate() {});
 	}
 
 	@Override
