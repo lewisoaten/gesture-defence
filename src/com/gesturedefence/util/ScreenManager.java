@@ -440,6 +440,10 @@ public class ScreenManager {
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
 					base.getEngine().setScene(QuitMenuCameFrom);
+					if (QuitMenuCameFrom == GameScreen)
+						if (base.gethud() != null)
+							if (base.gethud().isVisible() == false)
+								base.gethud().setVisible(true);
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};

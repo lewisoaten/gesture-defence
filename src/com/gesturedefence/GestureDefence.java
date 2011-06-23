@@ -482,8 +482,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		}
 		if (pKeyCode == KeyEvent.KEYCODE_BACK && pEvent.getAction() == KeyEvent.ACTION_DOWN)
 		{ //Back key pressed!
-			if (GestureDefence.this.getEngine().getScene() != GestureDefence.this.sm.MainMenu)
-			{
+			if (GestureDefence.this.getEngine().getScene() != GestureDefence.this.sm.MainMenu && GestureDefence.this.getEngine().getScene() != GestureDefence.this.sm.QuitMenu)
+			{ //Ensure that it is not on the main menu or already on the Quit screen, Infinite loop for the fail!
 				GestureDefence.this.sm.loadQuitMenu(GestureDefence.this.getEngine().getScene());
 			}
 			return true;
