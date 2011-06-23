@@ -185,6 +185,10 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public boolean mEarthquake = false; //Do an earthquake
 	public boolean mEarthQuaking = false; //EarthQuake currently running!
 	
+	public Sprite backgroundSprite1;
+	public Sprite backgroundSprite2;
+	public Sprite backgroundSprite3;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -384,9 +388,12 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mAutoParallaxBackgroundTexture);
 				
 				GestureDefence.this.autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 5);
-				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, getCameraHeight() - getParallaxLayerBack().getHeight(), getParallaxLayerBack())));
-				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0, 80, getParallaxLayerFront())));
-				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-10.0f, new Sprite(35, 62, getParallaxLayerFront())));
+				GestureDefence.this.backgroundSprite1 = new Sprite(0, getCameraHeight() - getParallaxLayerBack().getHeight(), getParallaxLayerBack());
+				GestureDefence.this.backgroundSprite2 = new Sprite(0, 80, getParallaxLayerFront());
+				GestureDefence.this.backgroundSprite3 = new Sprite(35, 62, getParallaxLayerFront());
+				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(0.0f, GestureDefence.this.backgroundSprite1));
+				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-5.0f, GestureDefence.this.backgroundSprite2));
+				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-10.0f, GestureDefence.this.backgroundSprite3));
 				
 				/* New animated Enemy Sprite's */
 				GestureDefence.this.newEnemyTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);

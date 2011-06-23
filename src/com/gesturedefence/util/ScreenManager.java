@@ -53,6 +53,9 @@ public class ScreenManager {
 	private int EarthQuakeDuration = 3 * 6; //Change the 3 value (in seconds). Leave the 6 (it runs every 6th of a second) this makes it seconds!
 	private int currentEarthDuration = 0;
 	
+	private float CameraShakeX = 0.0f;
+	private float CameraShakeY = 0.0f;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -156,9 +159,10 @@ public class ScreenManager {
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
 		
-		base.getEngine().setScene(MainMenu);
-		
 		mainMenuWaveNumber.setText("Start From Last Wave: " + base.fileThingy.getLastWaveFromSaveFile(base));
+		
+		base.getEngine().setScene(MainMenu);
+		CameraCheck();
 	}
 	
 	public void GameScreen()
@@ -216,9 +220,11 @@ public class ScreenManager {
 								if (currentEarthDuration >= EarthQuakeDuration)
 								{
 									base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
-									base.sm.GameScreen.setZIndex(0);
-									base.sm.GameScreen.setPosition(0.0f, 0.0f);
 									currentEarthDuration = 0;
+									base.sCamera.setCenter(base.sCamera.getWidth() / 2, base.sCamera.getHeight() / 2);
+									base.backgroundSprite1.setPosition(0.0f, 0.0f + (base.getCameraHeight() - base.getParallaxLayerBack().getHeight()));
+									base.backgroundSprite2.setPosition(0.0f, 0.0f + 80);
+									base.backgroundSprite3.setPosition(0.0f + 35, 0.0f + 62);
 									base.mEarthQuaking = false;
 								}
 								else
@@ -231,10 +237,11 @@ public class ScreenManager {
 											base.updateManaValue();
 											float theX = MathUtils.random(-10.0f, 10.0f);
 											float theY = MathUtils.random(-10.0f, 10.0f);
-											int theZ = MathUtils.random(-1, 1);
-											base.sm.GameScreen.setZIndex(theZ);
-											base.sm.GameScreen.setPosition(theX, theY);
-											
+											base.sCamera.offsetCenter(theX, theY);
+											base.backgroundSprite1.setPosition(base.backgroundSprite1.getX() - theX, base.backgroundSprite1.getY() - theY);
+											base.backgroundSprite2.setPosition(base.backgroundSprite2.getX() - theX, base.backgroundSprite2.getY() - theY);
+											base.backgroundSprite3.setPosition(base.backgroundSprite3.getX() - theX, base.backgroundSprite3.getY() - theY);
+											base.mEarthQuaking = true;											
 										}
 										else
 										{
@@ -246,9 +253,11 @@ public class ScreenManager {
 									{
 										float theX = MathUtils.random(-10.0f, 10.0f);
 										float theY = MathUtils.random(-10.0f, 10.0f);
-										int theZ = MathUtils.random(-1, 1);
-										base.sm.GameScreen.setZIndex(theZ);
-										base.sm.GameScreen.setPosition(theX, theY);
+										base.sCamera.offsetCenter(theX, theY);
+										base.backgroundSprite1.setPosition(base.backgroundSprite1.getX() - theX, base.backgroundSprite1.getY() - theY);
+										base.backgroundSprite2.setPosition(base.backgroundSprite2.getX() - theX, base.backgroundSprite2.getY() - theY);
+										base.backgroundSprite3.setPosition(base.backgroundSprite3.getX() - theX, base.backgroundSprite3.getY() - theY);
+										base.mEarthQuaking = false;
 									}
 									pTimerHandler.reset();
 								}
@@ -271,6 +280,7 @@ public class ScreenManager {
 		
 		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
+		CameraSet();
 	}
 	
 	public void NewWaveScreen()
@@ -289,6 +299,7 @@ public class ScreenManager {
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
 		base.getEngine().setScene(NewWaveScene);
+		CameraCheck();
 	}
 	
 	public void EndWaveScreen()
@@ -352,8 +363,9 @@ public class ScreenManager {
 		base.theWave.mCashAmountItem.setPosition(100, 100);
 		base.theWave.mBuyMenuItem.setPosition(100, 160);
 		base.complete.play();
-		base.getEngine().setScene(EndWaveScene);
 		base.fileThingy.savegame(base);
+		base.getEngine().setScene(EndWaveScene);
+		CameraCheck();
 	}
 	
 	public void GameOverScreen()
@@ -403,6 +415,7 @@ public class ScreenManager {
 				//base.finish();
 			}
 		});
+		CameraCheck();
 	}
 	
 	public void loadPauseScreen()
@@ -451,6 +464,7 @@ public class ScreenManager {
 				base.gethud().setVisible(false);
 		
 		base.getEngine().setScene(PauseScreen);
+		CameraCheck();
 	}
 	
 	public void loadQuitMenu(Scene TheSceneFrom) {
@@ -496,6 +510,7 @@ public class ScreenManager {
 				base.gethud().setVisible(false);
 		
 		base.getEngine().setScene(QuitMenu);
+		CameraCheck();
 	}
 	
 	public void ShowNewGameWarning() {
@@ -535,6 +550,28 @@ public class ScreenManager {
 				base.gethud().setVisible(false);
 		
 		base.getEngine().setScene(NewGameWarning);
+		CameraCheck();
+	}
+	
+	public void CameraCheck() { // Simply check to see if the camera is not in the default place
+		float checkX = base.sCamera.getCenterX() - (base.sCamera.getWidth() / 2);
+		float checkY = base.sCamera.getCenterY() - (base.sCamera.getHeight() / 2);
+		
+		if (checkX != 0.0f  || checkY != 0.0f)
+		{ // If it is not, remember where it is and then set it in the right place!
+			CameraShakeX = checkX;
+			CameraShakeY = checkY;
+			base.sCamera.setCenter(base.sCamera.getWidth() / 2, base.sCamera.getHeight() / 2);
+		}
+	}
+	
+	public void CameraSet() {
+		if (CameraShakeX != 0.0f || CameraShakeY != 0.0f) // Check to see if the camera was previously moved
+		{ // If it was move the damn thing!
+			base.sCamera.offsetCenter(CameraShakeX, CameraShakeY);
+			CameraShakeX = 0.0f;
+			CameraShakeY = 0.0f;
+		}
 	}
 	
 	// ========================================
