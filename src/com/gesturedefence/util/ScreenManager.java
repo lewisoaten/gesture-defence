@@ -15,6 +15,7 @@ import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.util.HorizontalAlign;
+import org.anddev.andengine.util.MathUtils;
 
 import android.app.Activity;
 import android.widget.Toast;
@@ -48,6 +49,9 @@ public class ScreenManager {
 	
 	private ChangeableText scorebits;
 	private ChangeableText mainMenuWaveNumber;
+	
+	private int EarthQuakeDuration = 3 * 6; //Change the 3 value (in seconds). Leave the 6 (it runs every 6th of a second) this makes it seconds!
+	private int currentEarthDuration = 0;
 	
 	// ========================================
 	// Constructors
@@ -161,7 +165,7 @@ public class ScreenManager {
 	{
 		if (GameScreen == null)
 		{
-			GameScreen = new Scene(1);
+			GameScreen = new Scene(4); //Changed to 4 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana))
 		
 			GameScreen.setBackground(base.autoParallaxBackground);
 			GameScreen.registerUpdateHandler(base.sRemoveStuff);
@@ -189,7 +193,7 @@ public class ScreenManager {
 						{
 							base.sm.GameScreen.detachChild(base.lightning);
 							if (base.mLightningBolt == true)
-								base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 3.0f, true, new ITimerCallback() {
+								base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 4.0f, true, new ITimerCallback() {
 									@Override
 									public void onTimePassed(TimerHandler pTimerHandler) {
 										base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
@@ -199,6 +203,58 @@ public class ScreenManager {
 									}
 								}));
 						}
+					
+					if (base.mEarthquake == true)
+					{
+						//EarthQuake Code!
+						base.mEarthquake = false;
+						base.mEarthQuaking = true;
+						base.sm.GameScreen.registerUpdateHandler(new TimerHandler(1 / 6.0f, new ITimerCallback() {
+							@Override
+							public void onTimePassed(TimerHandler pTimerHandler) {
+								currentEarthDuration++;
+								if (currentEarthDuration >= EarthQuakeDuration)
+								{
+									base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
+									base.sm.GameScreen.setZIndex(0);
+									base.sm.GameScreen.setPosition(0.0f, 0.0f);
+									currentEarthDuration = 0;
+									base.mEarthQuaking = false;
+								}
+								else
+								{
+									if (currentEarthDuration % 6 == 0 || currentEarthDuration == 1) //Every Second! (plus the first run through!
+									{
+										if ((base.mana - 500) >= 0)
+										{
+											base.mana -= 500;
+											base.updateManaValue();
+											float theX = MathUtils.random(-10.0f, 10.0f);
+											float theY = MathUtils.random(-10.0f, 10.0f);
+											int theZ = MathUtils.random(-1, 1);
+											base.sm.GameScreen.setZIndex(theZ);
+											base.sm.GameScreen.setPosition(theX, theY);
+											
+										}
+										else
+										{
+											base.mEarthQuaking = false;
+											currentEarthDuration = EarthQuakeDuration;
+										}
+									}
+									else
+									{
+										float theX = MathUtils.random(-10.0f, 10.0f);
+										float theY = MathUtils.random(-10.0f, 10.0f);
+										int theZ = MathUtils.random(-1, 1);
+										base.sm.GameScreen.setZIndex(theZ);
+										base.sm.GameScreen.setPosition(theX, theY);
+									}
+									pTimerHandler.reset();
+								}
+							}
+						}));
+					}
 				}
 
 				@Override
@@ -212,6 +268,8 @@ public class ScreenManager {
 		if (base.gethud() != null)
 			if (base.gethud().isVisible() == false)
 				base.gethud().setVisible(true);
+		
+		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
 	}
 	
@@ -307,29 +365,7 @@ public class ScreenManager {
 			Text gameOverText = new Text(base.getCameraWidth() / 2, base.getCameraHeight() / 2, base.mFont, "GAME OVER!", HorizontalAlign.CENTER) {
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
-					base.getEngine().setScene(MainMenu);
-					base.theWave.setWaveNumber(1);
-					base.sKillCount = 0;
-					base.sPreviousKillCount = 0;
-					base.sPreviousWaveNum = 0;
-					base.sMoney = 0;
-					base.mMoneyEarned = 0;
-					base.sEnemyCount = 0;
-					base.updateCashValue();
-					base.sCastle.setCurrentHealth(3000);
-					base.sCastle.setMaxHealth(3000);
-					base.updateCastleHealth();
-					base.mana = 0;
-					base.updateManaValue();
-					
-					/*remove all sprite's still in the game (enemies etc)
-					 * This needs optimising, like making it only remove enemies!
-					 */
-					base.sm.GameScreen.detachChildren();
-					
-					//Reload the castle, since it has now been removed
-					base.loadCastle(base.getCameraWidth() - (base.getCastleTexture().getWidth()), base.getCameraHeight() - 60 - base.getCastleTexture().getHeight());
-					
+					base.ButtonPress(9);					
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};

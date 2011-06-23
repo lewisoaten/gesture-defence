@@ -15,11 +15,7 @@ import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.MathUtils;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolItem;
 
-import android.widget.Toast;
-
 import com.gesturedefence.GestureDefence;
-import com.gesturedefence.util.Atracker;
-import com.openfeint.api.resource.Achievement;
 
 public class Enemy extends AnimatedSprite {
 	// ========================================
@@ -123,13 +119,17 @@ public class Enemy extends AnimatedSprite {
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed)
 		{
+			if (base.mEarthQuaking)
+			{
+				this.mTripping = true;
+			}
 			if ((base.mLightningBolt == true)
 					&& (this.mX <= base.mLightningBoltX + 100)
 					&& (this.mX >= base.mLightningBoltX - 100)
-					&& (this.mY >= base.mLightningBoltY - 50)
-					&& (this.mY <= base.mLightningBoltY + 30))
+					&& (this.mY >= base.mLightningBoltY - 70)
+					&& (this.mY <= base.mLightningBoltY + 20))
 			{
-				this.EnemyHurtFace(1000); //Lol's, gave it a random name, no idea why! Probably because I could
+				this.EnemyHurtFace(1000.0f); //Lol's, gave it a random name, no idea why! Probably because I could
 			}
 			if (isEnemyDead())
 			{
@@ -142,6 +142,14 @@ public class Enemy extends AnimatedSprite {
 					this.lastSetAnimation = 3;
 					this.mSetDeathAnimation = true;
 					base.splat.play();
+					
+					int randomChance = MathUtils.random(1, 5); //20% Chance?
+					if (randomChance == 3)
+					{
+						Sprite mMana = new Mana(this.mX, this.mY, base.getManaTextureRegion(), base);
+						base.sm.GameScreen.getChild(3).attachChild(mMana);
+						base.sm.GameScreen.registerTouchArea(mMana);
+					}
 				}
 				else if (this.isAnimationRunning() == false)
 				{
@@ -153,14 +161,6 @@ public class Enemy extends AnimatedSprite {
 					base.updateCashValue();
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
-					
-					int randomChance = MathUtils.random(1, 5); //20% Chance?
-					if (randomChance == 3)
-					{
-						Sprite mMana = new Mana(this.mX, this.mY, base.getManaTextureRegion(), base);
-						base.sm.GameScreen.attachChild(mMana);
-						base.sm.GameScreen.registerTouchArea(mMana);
-					}
 					
 					/* The following few lines remove the sprite's safely
 					 * Should not cause any errors with removal
@@ -179,10 +179,12 @@ public class Enemy extends AnimatedSprite {
 				{
 					if (this.lastSetAnimation != 5)
 					{
+						this.mPhysicsHandler.setEnabled(false);
 						this.animate(new long[] {150,150,250, 150, 150}, new int[] {9, 10, 11, 10, 9}, 0);
 						this.lastSetAnimation = 5;
 						base.hurt.play();
 						base.sm.GameScreen.unregisterTouchArea(this);
+						this.EnemyHurtFace(50.0f);
 					}
 					else if (this.isAnimationRunning() == false)
 					{
@@ -406,7 +408,7 @@ public class Enemy extends AnimatedSprite {
 			mGroundHitSpeed = 0;
 		}
 		
-		public void EnemyHurtFace(int amount)
+		public void EnemyHurtFace(float amount)
 		{
 			this.mHealth -= amount;
 		}

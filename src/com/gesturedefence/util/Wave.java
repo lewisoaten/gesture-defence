@@ -64,6 +64,7 @@ public class Wave {
 		public void setWaveNumber(int theNumber)
 		{ //Sets the current wave number (used on reset and load games)
 			Wave.sWaveNumber = theNumber;
+			this.mWaveNumberMenuItem.setText("WAVE : " + Wave.sWaveNumber);
 		}
 	
 	// ========================================

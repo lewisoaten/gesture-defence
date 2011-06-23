@@ -182,6 +182,9 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public Handler handler = new Handler(); //Used to fix null context problems! (Toast's...I'm looking at you)
 	
+	public boolean mEarthquake = false; //Do an earthquake
+	public boolean mEarthQuaking = false; //EarthQuake currently running!
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -581,10 +584,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			/*remove all sprite's still in the game (enemies etc)
 			 * This needs optimising, like making it only remove enemies!
 			 */
-			GestureDefence.this.sm.GameScreen.detachChildren();
+			GestureDefence.this.sm.GameScreen.getChild(1).detachChildren();
+			GestureDefence.this.sm.GameScreen.getChild(3).detachChildren();
 			
 			//Reload the castle, since it has now been removed
-			GestureDefence.this.loadCastle(GestureDefence.this.getCameraWidth() - (GestureDefence.this.getCastleTexture().getWidth()), GestureDefence.this.getCameraHeight() - 60 - GestureDefence.this.getCastleTexture().getHeight());
+			//GestureDefence.this.loadCastle(GestureDefence.this.getCameraWidth() - (GestureDefence.this.getCastleTexture().getWidth()), GestureDefence.this.getCameraHeight() - 60 - GestureDefence.this.getCastleTexture().getHeight());
 			
 			GestureDefence.this.getEngine().setScene(GestureDefence.this.sm.MainMenu);
 			return true;
@@ -599,7 +603,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public void loadCastle(float X, float Y) { //Load the castle sprite at X/Y cords
 		GestureDefence.this.sCastle.setPosition(X, Y);
-		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
+		GestureDefence.this.sm.GameScreen.getChild(3).attachChild(sCastle);
 	}
 	
 	
@@ -645,7 +649,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
 		 		break;
 		 }
-		GestureDefence.this.sm.GameScreen.attachChild(newEnemy); //Attach it to the screen
+		GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
 		GestureDefence.this.sEnemyCount++; //Increase the enemy count
@@ -673,57 +677,73 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
 		{ //Ensure that only the game scene is detecting the gestures!
 			if (predictions.size() > 0) {
-				Prediction prediction = predictions.get(0);
-				if (prediction.score > 1.0) {
-					if ((GestureDefence.this.mana - 1000) >= 0)
+					if (predictions.get(0).score > 1.0)
 					{
-						GestureDefence.this.mana -= 1000;
-						GestureDefence.this.ligtningStrike.play();
+						String action = predictions.get(0).name;
 						
-						RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
-						float posX;
-						float posY;
-						float lightningPosX;
-						float lightningPosY;
-						/* 
-						 * Check the left/right and top/bottom values
-						 * The returned bounding box rectangle is not aware which side is which
-						 * ie: Left < Right, Top > Bottom
-						 * (or in gaming case's, Top < Bottom , Y is reversed)
-						 */
-						
-						if (tempThing.left < tempThing.right)
-						{ //Work out the left hand side, the X position
-							posX = tempThing.left;
-							lightningPosX = posX + ((tempThing.right - tempThing.left) / 2);
+						if ("Lightning".equals(action)) {
+							if ((GestureDefence.this.mana - 1000) >= 0)
+							{
+								GestureDefence.this.mana -= 1000;
+								GestureDefence.this.ligtningStrike.play();
+								
+								RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
+								float posX;
+								float posY;
+								float lightningPosX;
+								float lightningPosY;
+								/* 
+								 * Check the left/right and top/bottom values
+								 * The returned bounding box rectangle is not aware which side is which
+								 * ie: Left < Right, Top > Bottom
+								 * (or in gaming case's, Top < Bottom , Y is reversed)
+								 */
+								
+								if (tempThing.left < tempThing.right)
+								{ //Work out the left hand side, the X position
+									posX = tempThing.left;
+									lightningPosX = posX + ((tempThing.right - tempThing.left) / 2);
+								}
+								else
+								{ //Bounding box has right as left!
+									posX = tempThing.right;
+									lightningPosX = posX + ((tempThing.left - tempThing.left) / 2);
+								}
+								
+								if (tempThing.bottom > tempThing.top) 
+								{ //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
+									posY = tempThing.bottom - 330;
+									lightningPosY = tempThing.bottom; //End of the sprite animation!
+								}
+								else
+								{ //Bounding box has bottom as top!
+									posY = tempThing.top - 330;
+									lightningPosY = tempThing.top; //End of the sprite animation!
+								}
+								
+								lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
+								lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
+								GestureDefence.this.sm.GameScreen.attachChild(lightning);
+								GestureDefence.this.mLightningBoltX = lightningPosX;
+								GestureDefence.this.mLightningBoltY = lightningPosY;
+								GestureDefence.this.mLightningBolt = true;
+								
+								GestureDefence.this.updateManaValue();
+							}
 						}
-						else
-						{ //Bounding box has right as left!
-							posX = tempThing.right;
-							lightningPosX = posX + ((tempThing.left - tempThing.left) / 2);
-						}
 						
-						if (tempThing.bottom > tempThing.top) 
-						{ //Take the bottom minus the height of the lightning texture (because I drew it badly 330 is roughly were the animation would stop)
-							posY = tempThing.bottom - 330;
-							lightningPosY = tempThing.bottom;
+						else if ("Earthquake".equals(action)){
+							if (mEarthQuaking == false && ((GestureDefence.this.mana - 500) >= 0) )
+							{
+								GestureDefence.this.mEarthquake = true;
+								GestureDefence.this.handler.post(new Runnable() {
+									public void run() {
+										Toast.makeText(GestureDefence.this.getApplicationContext(), "Earthquake", Toast.LENGTH_SHORT).show();
+									}
+								});	
+							}//end
 						}
-						else
-						{ //Bounding box has bottom as top!
-							posY = tempThing.top - 330;
-							lightningPosY = tempThing.top;
-						}
-						
-						lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
-						lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
-						GestureDefence.this.sm.GameScreen.attachChild(lightning);
-						GestureDefence.this.mLightningBoltX = lightningPosX;
-						GestureDefence.this.mLightningBoltY = lightningPosY;
-						GestureDefence.this.mLightningBolt = true;
-						
-						GestureDefence.this.updateManaValue();
 					}
-				}
 			}
 		}
 	}

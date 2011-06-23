@@ -6,8 +6,7 @@
 	android:layout_weight="1.0"
 	
 	android:eventsInterceptionEnabled="false"
-	android:gestureStrokeType="single" 
-	android:orientation="horizontal" >
+	android:gestureStrokeType="multiple" >
 	<org.anddev.andengine.opengl.view.RenderSurfaceView android:id="@+id/rendersurfaceview"
 				android:layout_width="fill_parent" 
 				android:layout_height="fill_parent"
