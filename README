@@ -1,12 +1,7 @@
+03:26 26/06/2011 - Added proguard (obfuscate) support (proguard is probably required, not included due to size!).
 01:04 22/06/2011 - Added intial support for OpenFeint. You will need to download the SDK seperatly for openfeint and then add it as a library into this project!
 
 Currently the waves are infinite!
-
-I have as yet to test how far and well the waves go.
-The higher the wave number the more enemies there will be.
-It is a very basic algorithm at the moment.
-
-
 
 Found some bugs/glitch's ?
 Create an issue with the best description as to what and how it's happening.
@@ -16,7 +11,7 @@ Create an issue with the best description as to what and how it's happening.
 **NOTE: This list has been compiled from AVD's within the SDK**
 **NOTE2: The testing done was to see if they installed and loaded successfully, game play has not been significantly tested**
 
-Android 1.5 - (Works, but not designed for it!)
+!!INCOMPATIBLE!! -> Android 1.5 - (Incompatible with the game design (Openfeint and Market place Do not function with 1.5)
 Android 1.6 - (Works, but not designed for it!)
 Android 2.1.update_1 - (Works, but not designed for it!)
 Android 2.2 - (Works, Game designed to work well with 2.2 and up)

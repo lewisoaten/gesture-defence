@@ -63,6 +63,8 @@ import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.FileOperations;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
+import com.openfeint.api.Notification;
+import com.openfeint.api.Notification.Delegate;
 import com.openfeint.api.OpenFeint;
 import com.openfeint.api.OpenFeintDelegate;
 import com.openfeint.api.OpenFeintSettings;
