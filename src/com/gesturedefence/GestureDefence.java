@@ -677,6 +677,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) { //Used to detect the gesture!!
 		ArrayList<Prediction> predictions = mLibrary.recognize(gesture);
+		boolean isItLightning = false;
 		
 		if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
 		{ //Ensure that only the game scene is detecting the gestures!
@@ -684,6 +685,40 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 					if (predictions.get(0).score > 1.0)
 					{
 						String action = predictions.get(0).name;
+						
+						/* Check the gesture dimensions
+						 * We need to decide whether it's a lightning strike (top to bottom, left/right is small)
+						 * or Earthquake (Left to right, WIDE)
+						 */
+						
+						RectF GestureCheck = gesture.getBoundingBox();
+						
+						if (GestureCheck.left < GestureCheck.right)
+						{
+							if (GestureCheck.right - GestureCheck.left < 200)
+								isItLightning = true;
+						}
+						else if (GestureCheck.right < GestureCheck.left)
+							if (GestureCheck.left - GestureCheck.right < 200)
+								isItLightning = true;
+						
+						//Check the action name
+						if (isItLightning)
+						{
+							if (predictions.get(0).name == "Lightning")
+								action = predictions.get(0).name;
+						}
+						else
+						{
+							for (int blah = 0; blah < predictions.size() - 1; blah++)
+							{
+								if (predictions.get(blah).name == "Earthquake")
+								{
+									action = predictions.get(blah).name;
+									blah = predictions.size(); //Breaks it out quicker
+								}
+							}
+						}
 						
 						if ("Lightning".equals(action)) {
 							if ((GestureDefence.this.mana - 1000) >= 0)
