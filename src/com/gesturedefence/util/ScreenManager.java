@@ -152,6 +152,7 @@ public class ScreenManager {
 		
 		base.getEngine().setScene(MainMenu);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void GameScreen()
@@ -271,6 +272,7 @@ public class ScreenManager {
 		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
 		CameraSet();
+		base.CustomNotifications.CheckChangeScene();
 		
 		base.updateCashValue(); // Update the display's (if game loaded makes sure it refreshes)
 		base.updateCastleHealth();
@@ -294,6 +296,7 @@ public class ScreenManager {
 				base.gethud().setVisible(false);
 		base.getEngine().setScene(NewWaveScene);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void EndWaveScreen()
@@ -360,6 +363,7 @@ public class ScreenManager {
 		base.fileThingy.savegame(base);
 		base.getEngine().setScene(EndWaveScene);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void GameOverScreen()
@@ -408,6 +412,7 @@ public class ScreenManager {
 			}
 		});
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void loadPauseScreen()
@@ -457,6 +462,7 @@ public class ScreenManager {
 		
 		base.getEngine().setScene(PauseScreen);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void loadQuitMenu(Scene TheSceneFrom) {
@@ -503,6 +509,7 @@ public class ScreenManager {
 		
 		base.getEngine().setScene(QuitMenu);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void ShowNewGameWarning() {
@@ -543,6 +550,7 @@ public class ScreenManager {
 		
 		base.getEngine().setScene(NewGameWarning);
 		CameraCheck();
+		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void CameraCheck() { // Simply check to see if the camera is not in the default place

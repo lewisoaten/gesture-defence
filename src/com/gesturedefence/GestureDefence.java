@@ -62,8 +62,11 @@ import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.FileOperations;
+import com.gesturedefence.util.Notifications;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
+import com.openfeint.api.Notification;
+import com.openfeint.api.Notification.Delegate;
 import com.openfeint.api.OpenFeint;
 import com.openfeint.api.OpenFeintDelegate;
 import com.openfeint.api.OpenFeintSettings;
@@ -195,6 +198,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	private static final String OFgameKey = "kbzd0VQKbwIcYAPF8sQRIg";
 	private static final String OFgameSecret = "j09MMl5XeCtYZMHFRBolC8ESCB08QZVjFYBbzhgn8";
 	
+	public Notifications CustomNotifications;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -296,10 +301,6 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		gestures.setWillNotDraw(true);
 		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);
-		
-		/* OpenFeint Setup */		
-		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
-		OpenFeint.initialize(this, settings, new OpenFeintDelegate() {});
 	}
 
 	@Override
@@ -364,6 +365,25 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		//Show loading text on new load screen
 		final Text textCenter = new Text(100, 60, this.mFont, "LOADING..", HorizontalAlign.CENTER);
 		loadScene.attachChild(textCenter);
+		
+		//Set the custom notification system up
+		CustomNotifications = new Notifications(GestureDefence.this);
+		
+		/* OpenFeint Setup */		
+		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
+		OpenFeint.initialize(GestureDefence.this, settings, new OpenFeintDelegate() {});
+		
+		//Override openfeint notifications
+		Notification.setDelegate(new Delegate() {
+			@Override
+			public boolean canShowNotification(Notification notification) {
+				return false; //Overrides the openFeint notifications
+			}
+			@Override
+			public void displayNotification(Notification notification) {
+				GestureDefence.this.CustomNotifications.addNotification(notification.getText()); //Sends the message to the custom method
+			}
+		});
 		
 		//Create a timer that after 1 second  begins loading all other textures
 		loadScene.registerUpdateHandler(new TimerHandler(1.0f, true, new ITimerCallback() {
