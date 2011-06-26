@@ -20,6 +20,7 @@ import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
+import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ColorBackground;
@@ -63,8 +64,6 @@ import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.FileOperations;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
-import com.openfeint.api.Notification;
-import com.openfeint.api.Notification.Delegate;
 import com.openfeint.api.OpenFeint;
 import com.openfeint.api.OpenFeintDelegate;
 import com.openfeint.api.OpenFeintSettings;
@@ -681,6 +680,39 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		
 		if (GestureDefence.this.getEngine().getScene() == GestureDefence.this.sm.GameScreen)
 		{ //Ensure that only the game scene is detecting the gestures!
+			/* Draw the gesture! */
+			int i = 0;
+			boolean something = true;
+			while (something) {
+			try
+			{
+				final float x1 = gesture.getStrokes().get(0).points[i];
+				final float y1 = gesture.getStrokes().get(0).points[i + 1];
+				final float x2 = gesture.getStrokes().get(0).points[i + 2];
+				final float y2 = gesture.getStrokes().get(0).points[i + 3];
+				
+				final Line line = new Line(x1, y1, x2, y2, 5);
+				
+				GestureDefence.this.getEngine().getScene().getChild(4).attachChild(line);
+				i += 2; //Makes sure the starting point of the next line is the end point of the previous line
+			}
+			catch (Throwable e)
+			{ //End of drawable cords ;)
+				something = false;
+				}
+			}
+			
+			TimerHandler DrawnGestureThing;
+			GestureDefence.this.sm.GameScreen.registerUpdateHandler(DrawnGestureThing = new TimerHandler(1, true, new ITimerCallback()
+			{ //Timer settings,
+				@Override
+				public void onTimePassed(final TimerHandler pTimerHandler)
+				{
+					GestureDefence.this.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
+					GestureDefence.this.sm.GameScreen.getChild(4).detachChildren();
+				}
+			}));
+			
 			if (predictions.size() > 0) {
 					if (predictions.get(0).score > 1.0)
 					{

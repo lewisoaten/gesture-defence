@@ -158,7 +158,7 @@ public class ScreenManager {
 	{
 		if (GameScreen == null)
 		{
-			GameScreen = new Scene(4); //Changed to 4 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana))
+			GameScreen = new Scene(5); // 5 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana), 4 = Gesture Drawing layer)
 		
 			GameScreen.setBackground(base.autoParallaxBackground);
 			GameScreen.registerUpdateHandler(base.sRemoveStuff);
