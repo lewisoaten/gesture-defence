@@ -77,6 +77,7 @@ public class Castle extends Sprite {
 		{
 			//Increase's max health by X amount
 			Castle.mMaxHealth += amount;
+			Castle.mHealth += amount;
 			return true;
 		}
 		
