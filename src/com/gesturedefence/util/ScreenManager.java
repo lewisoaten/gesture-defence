@@ -148,7 +148,7 @@ public class ScreenManager {
 			if (base.gethud().isVisible())
 				base.gethud().setVisible(false);
 		
-		mainMenuWaveNumber.setText("Start From Last Wave: " + base.fileThingy.getLastWaveFromSaveFile(base));
+		mainMenuWaveNumber.setText("Start From Last Wave: " + (base.fileThingy.getLastWaveFromSaveFile(base) + 1));
 		
 		base.getEngine().setScene(MainMenu);
 		CameraCheck();

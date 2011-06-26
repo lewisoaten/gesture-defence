@@ -224,7 +224,7 @@ public class FileOperations {
 			/* This simply looks for a save file and then finds the last wave value*/
 			String FILENAME = "save_game_file";
 			String string = "";
-			String WaveNumber = "0";
+			String WaveNumber = "-1";
 			
 			try {
 				FileInputStream fis = ctx.openFileInput(FILENAME);
