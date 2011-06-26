@@ -191,6 +191,11 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public Sprite backgroundSprite2;
 	public Sprite backgroundSprite3;
 	
+	private static final String OFgameName = "Gesture_Defence";
+	private static final String OFgameId = "311002";
+	private static final String OFgameKey = "kbzd0VQKbwIcYAPF8sQRIg";
+	private static final String OFgameSecret = "j09MMl5XeCtYZMHFRBolC8ESCB08QZVjFYBbzhgn8";
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -293,12 +298,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);
 		
-		/* OpenFeint Setup */
-		final String OFgameName = "Gesture_Defence";
-		final String OFgameId = "311002";
-		final String OFgameKey = "kbzd0VQKbwIcYAPF8sQRIg";
-		final String OFgameSecret = "j09MMl5XeCtYZMHFRBolC8ESCB08QZVjFYBbzhgn8";
-		
+		/* OpenFeint Setup */		
 		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
 		OpenFeint.initialize(this, settings, new OpenFeintDelegate() {});
 	}
@@ -316,9 +316,6 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			getWindowManager().getDefaultDisplay().getMetrics(dm);
 			int width = (int) (dm.widthPixels); //Gets the actual width of the screen
 			int height = (int) (dm.heightPixels); //Gets the actual height of the screen
-
-			
-			
 			
 			/* Check the width, if it's one of the following change the camera width for it to fit the screen */
 				if (width == 320)
@@ -431,7 +428,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.mStartButton, GestureDefence.this.mQuitButton, GestureDefence.this.mBuyButton, GestureDefence.this.mNextWaveButton);
 				
 				GestureDefence.this.sRemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
-				GestureDefence.this.sMoney = 0; //Initialise the money value, 0 for now (change this once saves working)
+				GestureDefence.this.sMoney = 0; //Initialise the money value, 0 for now
 				GestureDefence.this.theWave = new Wave(GestureDefence.this);
 				
 				//Setup the castle, but don't actually attach it yet!
@@ -594,12 +591,10 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			 * This needs optimising, like making it only remove enemies!
 			 */
 			GestureDefence.this.sm.GameScreen.getChild(1).detachChildren();
+			GestureDefence.this.mOnScreenEnemies = 0;
 			GestureDefence.this.sm.GameScreen.getChild(3).detachChildren();
 			
-			//Reload the castle, since it has now been removed
-			//GestureDefence.this.loadCastle(GestureDefence.this.getCameraWidth() - (GestureDefence.this.getCastleTexture().getWidth()), GestureDefence.this.getCameraHeight() - 60 - GestureDefence.this.getCastleTexture().getHeight());
-			
-			GestureDefence.this.getEngine().setScene(GestureDefence.this.sm.MainMenu);
+			GestureDefence.this.sm.loadMainMenu();
 			return true;
 		case 99:
 			/* Quits the Game */
@@ -612,7 +607,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public void loadCastle(float X, float Y) { //Load the castle sprite at X/Y cords
 		GestureDefence.this.sCastle.setPosition(X, Y);
-		GestureDefence.this.sm.GameScreen.getChild(3).attachChild(sCastle);
+		GestureDefence.this.sm.GameScreen.getChild(2).attachChild(sCastle);
 	}
 	
 	

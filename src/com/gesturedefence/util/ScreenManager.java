@@ -121,16 +121,7 @@ public class ScreenManager {
 				}
 			};
 			
-			Text LOADGame = new Text(10, 10, base.mFont2, "") //Remove? Loads with wave number now!
-			{
-				@Override
-				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
-					//base.loadSaveFile();
-					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
-				}
-			};
-			
-			Text openFeintOption = new Text(10, base.getCameraHeight() - LOADGame.getHeight(), base.mFont2, "OpenFeint")
+			Text openFeintOption = new Text(10, base.getCameraHeight() - mainMenuWaveNumber.getHeight(), base.mFont2, "OpenFeint")
 			{
 				@Override
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
@@ -141,12 +132,10 @@ public class ScreenManager {
 			
 			MainMenu.attachChild(startButton);
 			MainMenu.attachChild(quitButton);
-			MainMenu.attachChild(LOADGame);
 			MainMenu.attachChild(openFeintOption);
 			MainMenu.attachChild(mainMenuWaveNumber);
 			MainMenu.registerTouchArea(startButton);
 			MainMenu.registerTouchArea(quitButton);
-			MainMenu.registerTouchArea(LOADGame);
 			MainMenu.registerTouchArea(openFeintOption);
 			MainMenu.registerTouchArea(mainMenuWaveNumber);
 			MainMenu.setTouchAreaBindingEnabled(true);
@@ -192,6 +181,7 @@ public class ScreenManager {
 							base.sPreviousKillCount += base.theWave.getNumberEnemysToSpawn();
 							base.sm.EndWaveScreen();
 						}
+					
 					if (base.lightning != null)
 						if (base.lightning.isAnimationRunning() == false)
 						{
@@ -281,6 +271,10 @@ public class ScreenManager {
 		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
 		CameraSet();
+		
+		base.updateCashValue(); // Update the display's (if game loaded makes sure it refreshes)
+		base.updateCastleHealth();
+		base.updateManaValue();
 	}
 	
 	public void NewWaveScreen()
@@ -402,7 +396,6 @@ public class ScreenManager {
 			@Override public void onSuccess(boolean newHighScore) {
 				// sweet, score was posted
 				base.setResult(Activity.RESULT_OK);
-				//base.finish(); //Dur dum feature!
 			}
 
 			@Override public void onFailure(final String exceptionMessage) {
@@ -412,7 +405,6 @@ public class ScreenManager {
 					}
 				});
 				base.setResult(Activity.RESULT_CANCELED);
-				//base.finish();
 			}
 		});
 		CameraCheck();

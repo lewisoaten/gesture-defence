@@ -111,7 +111,6 @@ public class Atracker {
 				new Achievement("1048622").updateProgression(this.ofTripCount, new Achievement.UpdateProgressionCB() {
 					@Override
 					public void onSuccess(boolean complete) {
-						//Toast.makeText(base, "update", Toast.LENGTH_SHORT).show();
 						of1048622 = complete;
 					}
 					
