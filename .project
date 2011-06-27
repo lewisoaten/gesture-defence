@@ -30,4 +30,11 @@
 		<nature>com.android.ide.eclipse.adt.AndroidNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>OpenFeintAPI_src</name>
+			<type>2</type>
+			<locationURI>_android_OpenFeintAPI_9a19e1b4/src</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

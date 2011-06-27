@@ -280,17 +280,17 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	// ========================================
 	
 	@Override
-	protected int getLayoutID() { //Have to include, game will not function otherwise
+	protected int getLayoutID() { //Used to allow gesture overlay
 		return R.layout.main;
 	}
 	
 	@Override
-	protected int getRenderSurfaceViewID() { //Have to include, game will not function otherwise
+	protected int getRenderSurfaceViewID() { //Used to allow gesture overlay (Render Surface is the game area)
 		return R.id.rendersurfaceview;
 	}
 	
 	@Override
-	public void onCreate(Bundle savedInstanceState) { //Purely to get gestures loading and detecting!
+	public void onCreate(Bundle savedInstanceState) { //Setup a few onCreate items
 		super.onCreate(savedInstanceState);		
 		GestureDefence.this.mLibrary = GestureLibraries.fromRawResource(GestureDefence.this, R.raw.spells);
 		if (!mLibrary.load()) {
