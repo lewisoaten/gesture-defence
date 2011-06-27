@@ -301,6 +301,8 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		gestures.setWillNotDraw(true);
 		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);
+		
+		/* Setup Billing */
 	}
 
 	@Override
