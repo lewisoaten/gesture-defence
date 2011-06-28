@@ -169,7 +169,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	/* Music */
 	public Music ambient;
 	
-	public int mOnScreenEnemyLimit = 40; //A hard cap on the total number of enemies at any one time
+	public int mOnScreenEnemyLimit = 80; //A hard cap on the total number of enemies at any one time
 	public int mOnScreenEnemies = 0; //Used with above in the Wave class
 	
 	protected GestureLibrary mLibrary;
@@ -456,7 +456,12 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				GestureDefence.this.sCastle = new Castle(0, 0, GestureDefence.this.mCastleTextureRegion);
 				GestureDefence.this.sCastle.setCastleBase(GestureDefence.this);
 				
-				GestureDefence.this.AchieveTracker = new Atracker(GestureDefence.this);
+				GestureDefence.this.handler.post(new Runnable()
+				{
+					public void run() {
+						GestureDefence.this.AchieveTracker = new Atracker(GestureDefence.this); //Offload it so it doesn't cause a slight jitter as it connects?
+					}
+				});
 				
 				GestureDefence.this.fileThingy = new FileOperations(GestureDefence.this);
 				
@@ -655,25 +660,25 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		updateManaValue();
 	}
 	
-	public void loadNewEnemy(float X, float Y, int type) {
+	public void loadNewEnemy(final float X, final float Y, final int type) {
 		final Enemy newEnemy;
 		/* Note the clone(), without this you get ISSUES! */;
-		 switch(type)
-		 {
-		 	case 1:
-		 		//Enemy type 1 (standard)
-		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
-		 		break;
-		 	case 2:
-		 		//Enemy type 2
-		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion2.clone(), GestureDefence.this, 2);
-				 newEnemy.setScale(1.5f);
-		 		break;
-		 	default:
-		 		//Incase type specified is wrong, default to enemy type 1 texture
-		 		newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
-		 		break;
-		 }
+		switch(type)
+		{
+		case 1:
+			//Enemy type 1 (standard)
+			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+			break;
+		case 2:
+			//Enemy type 2
+			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion2.clone(), GestureDefence.this, 2);
+			newEnemy.setScale(1.5f);
+			break;
+		default:
+			//Incase type specified is wrong, default to enemy type 1 texture
+			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+			break;
+		}
 		GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding

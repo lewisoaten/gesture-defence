@@ -22,11 +22,14 @@ public class Wave {
 	
 		private GestureDefence base; //Instance of GestureDefence
 		private static int sWaveNumber = 1; //The wave number we are on
-		private static int sNumberEnemysToSpawn = 0; //Number of enemys that will spawn this wave
+		private static int sNumberEnemysToSpawn = 0; //Number of enemies that will spawn this wave
 		
 		public ChangeableTextMenuItem mCashAmountItem; //Text Item to show cash (used on end wave screen)
 		public ChangeableTextMenuItem mBuyMenuItem; //Text item to show health (used on end wave screen)
 		public ChangeableTextMenuItem mWaveNumberMenuItem; //Text item to show wave number (Used on newWave screen?)
+		
+		private static int SpawnedEnemies_Default = 0;
+		private static int SpawnedEnemies_Giant = 0;
 	
 	// ========================================
 	// Constructors
@@ -80,8 +83,13 @@ public class Wave {
 			@SuppressWarnings("unused") //Remove warnings about 'unused' variables
 			TimerHandler waveSpawnTimer; //Create a timer
 			base.sEnemyCount = 0; //Set enemy count 0..?
+			SpawnedEnemies_Default = 0;
+			SpawnedEnemies_Giant = 0;
 			
-			Wave.sNumberEnemysToSpawn = (Wave.sWaveNumber * 10) + (Wave.sWaveNumber * 2); //Crap difficulty formula, might want work out a more awesome one
+			//Wave.sNumberEnemysToSpawn = (Wave.sWaveNumber * 10) + (Wave.sWaveNumber * 2); //Crap difficulty formula, might want work out a more awesome one
+			Wave.sNumberEnemysToSpawn = Wave.sWaveNumber * 10;
+			if (Wave.sWaveNumber >= 5)
+				Wave.sNumberEnemysToSpawn += (Wave.sWaveNumber - 4) * 2; // Add on additional giant enemies!
 			
 			//Create a timer attached to the game screen for spawning
 			base.sm.GameScreen.registerUpdateHandler(waveSpawnTimer = new TimerHandler(1 / 10.0f, true, new ITimerCallback()
@@ -89,13 +97,21 @@ public class Wave {
 				@Override
 				public void onTimePassed(final TimerHandler pTimerHandler)
 				{
-					/* Every 10th of a second do a random spawn check
-					 * This could be changed, but for now its this */
+					pTimerHandler.reset();
+					/* Every 10th of a second, do a random spawn check */
 					if (base.mOnScreenEnemies <= base.mOnScreenEnemyLimit) //Add a fixed limit to enemies on screen, Prevent LAG!
 					{
-						int randomChance = MathUtils.random(1, 10);
-						int randomChance2 = MathUtils.random(1, 10);
-						int difficultyChance = MathUtils.random(1, 45);
+						//int MaxRandom = (int) ((base.mOnScreenEnemies + 1) * 0.5);
+						//int MaxRandom2 = (int) ((SpawnedEnemies_Giant + 1) * 1.5);
+						int MaxRandom = 10 - Wave.sWaveNumber;
+						if (MaxRandom <= 1)
+							MaxRandom = 2;
+						int MaxRandom2 = 25 - Wave.sWaveNumber; //Too high and it sucks!
+						if (MaxRandom2 <= 1)
+							MaxRandom2 = 2;
+						int randomChance = MathUtils.random(1, MaxRandom);
+						int randomChance2 = MathUtils.random(1, MaxRandom);
+						int difficultyChance = MathUtils.random(1, MaxRandom2);
 						
 						if (randomChance == randomChance2)
 						{
@@ -104,12 +120,16 @@ public class Wave {
 							/* Allow for ?*/
 							final float yPos = MathUtils.random(250.0f, base.getCameraHeight() - 60);
 							
-							if ( (difficultyChance == randomChance) && (Wave.sWaveNumber >= 5) )
+							if ( (difficultyChance == randomChance) && SpawnedEnemies_Giant <= ((Wave.sWaveNumber - 4) * 2) )
 							{ //Spawn harder enemy
 								base.loadNewEnemy(xPos, yPos, 2);
+								SpawnedEnemies_Giant++;
 							}
-							else //Spawn default enemy
+							else if (SpawnedEnemies_Default <= (Wave.sWaveNumber * 10) )
+							{ //Spawn default enemy
 								base.loadNewEnemy(xPos, yPos, 1);
+								SpawnedEnemies_Default++;
+							}
 						}
 						if (base.sEnemyCount == Wave.sNumberEnemysToSpawn)
 						{ //Once all the enemies have been spawned, remove the timer
