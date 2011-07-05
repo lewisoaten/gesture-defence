@@ -45,7 +45,8 @@ public class Notifications {
 		
 		private ChangeableText theNotification;
 		
-		private boolean mAlreadyShowing = false; // Used to work out if a message is already showing
+		public boolean mAlreadyShowing = false; // Used to work out if a message is already showing
+		private int lastShowedMessage = -1;
 		
 		private Scene theSceneShowing;
 		
@@ -87,6 +88,14 @@ public class Notifications {
 			
 			theNotification = new ChangeableText(Xpos + 15 + smallOFLogo.getWidth(), Ypos + 4, mFont3, "", base.getCameraWidth());
 			
+			if (base.gethud() != null)
+			{
+				base.gethud().getChild(1).attachChild(NotificationBackDrop);
+				base.gethud().getChild(1).attachChild(theNotification);
+				base.gethud().getChild(1).attachChild(smallOFLogo);
+				base.gethud().getChild(1).setVisible(false);
+			}
+			
 			TimerHandler NotificationChecks; //Register a new timer, check every second check for new messages!
 			base.getEngine().registerUpdateHandler(NotificationChecks = new TimerHandler(1, true, new ITimerCallback() {
 
@@ -120,8 +129,11 @@ public class Notifications {
 				try {
 				if (mMessages.size() > 0) //Make sure we have some messages!
 				{
-					showMessage(0);
-					mMessages.remove(0); // Will this work?
+					if (base.gethud() != null)
+					{ //Makes sure not to crash if it hasn't been made yet!
+						showMessage(0);
+						lastShowedMessage = 0;
+					}
 				}
 				} catch (NullPointerException e)
 				{
@@ -131,57 +143,31 @@ public class Notifications {
 		}
 		
 		public void showMessage(int indicator) {
-			// Outputs the message			
-			theNotification.setText(mMessages.get(indicator));
-			theSceneShowing = base.getEngine().getScene();
-			
-			base.getEngine().getScene().attachChild(NotificationBackDrop);
-			base.getEngine().getScene().attachChild(theNotification);
-			base.getEngine().getScene().attachChild(smallOFLogo);
+			// Outputs the message
 			this.mAlreadyShowing = true; // Tell it that we are now showing a message
-			
-			base.getEngine().getScene().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
+			theNotification.setText(mMessages.get(indicator));
+			if (base.gethud().getChild(1).getChildCount() <= 0)
+			{
+				base.gethud().getChild(1).attachChild(NotificationBackDrop);
+				base.gethud().getChild(1).attachChild(theNotification);
+				base.gethud().getChild(1).attachChild(smallOFLogo);
+			}
+			base.gethud().getChild(1).setVisible(true);
+
+			base.gethud().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
 				@Override
 				public void onTimePassed(TimerHandler pTimerHandler) {
-					theSceneShowing.unregisterUpdateHandler(pTimerHandler); // Remove the timer (prevent duplicates/issues)
-					theSceneShowing.detachChild(NotificationBackDrop);
-					theSceneShowing.detachChild(smallOFLogo); // Detach the notification logo
-					theSceneShowing.detachChild(theNotification); // Detach the Notificaiotn
+					base.gethud().unregisterUpdateHandler(pTimerHandler); // Remove the timer (prevent duplicates/issues)
+					if (lastShowedMessage != -1)
+					{
+						mMessages.remove(lastShowedMessage);
+						lastShowedMessage = -1;
+					}
+					base.gethud().getChild(1).setVisible(false);
 					mAlreadyShowing = false; // Set to make sure it knows the current notification is over
 				}
 			}));
-		}
-		
-		public void CheckChangeScene() {
-			/* This method is run each time a scene change occurs (See ScreenManager) 
-			 * The Idea is to keep the notification in place!
-			 */
-			if (base.getEngine().getScene() != theSceneShowing && mAlreadyShowing)
-			{ //The scene has changed! LETS DO THIS!
-				theSceneShowing.unregisterUpdateHandler(notificationDuration);
-				theSceneShowing.detachChild(NotificationBackDrop);
-				theSceneShowing.detachChild(smallOFLogo);
-				theSceneShowing.detachChild(theNotification);
-				theSceneShowing = base.getEngine().getScene();
-				
-				//Now re-attach the message!				
-				base.getEngine().getScene().attachChild(NotificationBackDrop);
-				base.getEngine().getScene().attachChild(theNotification);
-				base.getEngine().getScene().attachChild(smallOFLogo);
-				this.mAlreadyShowing = true; // Tell it that we are now showing a message
-				
-				base.getEngine().getScene().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
-					@Override
-					public void onTimePassed(TimerHandler pTimerHandler) {
-						theSceneShowing.unregisterUpdateHandler(pTimerHandler); // Remove the timer (prevent duplicates/issues)
-						theSceneShowing.detachChild(NotificationBackDrop);
-						theSceneShowing.detachChild(smallOFLogo); // Detach the notification logo
-						theSceneShowing.detachChild(theNotification); // Detach the Notificaiotn
-						mAlreadyShowing = false; // Set to make sure it knows the current notification is over
-					}
-				}));
-				
-			}
+
 		}
 	
 	// ========================================

@@ -44,6 +44,7 @@ public class ScreenManager {
 	public Scene PauseScreen;
 	public Scene QuitMenu;
 	public Scene NewGameWarning;
+	public Scene InGameShop;
 	
 	private Scene QuitMenuCameFrom;
 	
@@ -130,29 +131,37 @@ public class ScreenManager {
 				}
 			};
 			
+			Text InGameStore = new Text(base.getCameraWidth() - 100, base.getCameraHeight() - mainMenuWaveNumber.getHeight(), base.mFont2, "Store")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.sm.LoadShopMenu();
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
 			MainMenu.attachChild(startButton);
 			MainMenu.attachChild(quitButton);
 			MainMenu.attachChild(openFeintOption);
 			MainMenu.attachChild(mainMenuWaveNumber);
+			MainMenu.attachChild(InGameStore);
 			MainMenu.registerTouchArea(startButton);
 			MainMenu.registerTouchArea(quitButton);
 			MainMenu.registerTouchArea(openFeintOption);
 			MainMenu.registerTouchArea(mainMenuWaveNumber);
+			MainMenu.registerTouchArea(InGameStore);
 			MainMenu.setTouchAreaBindingEnabled(true);
 			
 			base.ambient.setLooping(true);
 			base.ambient.play();
 		}
 		
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		
 		mainMenuWaveNumber.setText("Start From Last Wave: " + (base.fileThingy.getLastWaveFromSaveFile(base) + 1));
 		
 		base.getEngine().setScene(MainMenu);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void GameScreen()
@@ -266,13 +275,11 @@ public class ScreenManager {
 		}
 		
 		if (base.gethud() != null)
-			if (base.gethud().isVisible() == false)
-				base.gethud().setVisible(true);
+			base.gethud().getChild(0).setVisible(true);
 		
 		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
 		CameraSet();
-		base.CustomNotifications.CheckChangeScene();
 		
 		base.updateCashValue(); // Update the display's (if game loaded makes sure it refreshes)
 		base.updateCastleHealth();
@@ -291,12 +298,9 @@ public class ScreenManager {
 		
 		base.theWave.mWaveNumberMenuItem.setPosition((base.getCameraWidth() / 2) - (base.theWave.mWaveNumberMenuItem.getWidth() / 2), (base.getCameraHeight() / 2) - (base.theWave.mWaveNumberMenuItem.getHeight() / 2));
 
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		base.getEngine().setScene(NewWaveScene);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void EndWaveScreen()
@@ -353,9 +357,7 @@ public class ScreenManager {
 			EndWaveScene.registerTouchArea(saveGame);
 		}
 		
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		
 		base.theWave.mCashAmountItem.setPosition(100, 100);
 		base.theWave.mBuyMenuItem.setPosition(100, 160);
@@ -363,7 +365,6 @@ public class ScreenManager {
 		base.fileThingy.savegame(base);
 		base.getEngine().setScene(EndWaveScene);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void GameOverScreen()
@@ -387,9 +388,7 @@ public class ScreenManager {
 		}		
 		
 		scorebits.setText("Kills = " + base.sKillCount + ", cash = " + base.mMoneyEarned);
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		base.game_over.play();
 		base.getEngine().setScene(GameOverScene);
 		
@@ -412,7 +411,6 @@ public class ScreenManager {
 			}
 		});
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void loadPauseScreen()
@@ -456,13 +454,10 @@ public class ScreenManager {
 			PauseScreen.attachChild(openFeintText);
 		}		
 		
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		
 		base.getEngine().setScene(PauseScreen);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void loadQuitMenu(Scene TheSceneFrom) {
@@ -503,13 +498,10 @@ public class ScreenManager {
 			QuitMenu.registerTouchArea(NoOption);
 		}
 		
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		
 		base.getEngine().setScene(QuitMenu);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void ShowNewGameWarning() {
@@ -544,13 +536,10 @@ public class ScreenManager {
 			NewGameWarning.registerTouchArea(NoOption);
 		}
 		
-		if (base.gethud() != null)
-			if (base.gethud().isVisible())
-				base.gethud().setVisible(false);
+		checkHud();
 		
 		base.getEngine().setScene(NewGameWarning);
 		CameraCheck();
-		base.CustomNotifications.CheckChangeScene();
 	}
 	
 	public void CameraCheck() { // Simply check to see if the camera is not in the default place
@@ -571,6 +560,65 @@ public class ScreenManager {
 			base.sCamera.offsetCenter(CameraShakeX, CameraShakeY);
 			CameraShakeX = 0.0f;
 			CameraShakeY = 0.0f;
+		}
+	}
+	
+	public void LoadShopMenu() {
+		if (InGameShop == null)
+		{
+			InGameShop = new Scene(1);
+			//Load the damn menu!
+			
+			Text BuyThing1 = new Text(10, base.getCameraHeight() / 2, base.mFont2, "Buy?")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					// Do Something...forgot what!
+					base.mSku = base.CATALOG[0].sku;
+					if (!base.mBillingService.requestPurchase(base.mSku, base.mPayloadContent))
+						base.CustomNotifications.addNotification("BILLING NOT SUPPORTED");
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			Text BuyThing2 = new Text(10, BuyThing1.getX() + BuyThing1.getHeight(), base.mFont2, "Buy2?")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					// Do Something...forgot what!
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			Text BackToMenu = new Text(10, base.getCameraHeight() - BuyThing2.getHeight(), base.mFont2, "Back")
+			{
+				@Override
+				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
+					base.sm.loadMainMenu();
+					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+				}
+			};
+			
+			
+			InGameShop.attachChild(BuyThing1);
+			InGameShop.registerTouchArea(BuyThing1);
+			InGameShop.attachChild(BuyThing2);
+			InGameShop.registerTouchArea(BuyThing2);
+			InGameShop.attachChild(BackToMenu);
+			InGameShop.registerTouchArea(BackToMenu);
+		}
+		
+		checkHud();
+		
+		base.getEngine().setScene(InGameShop);
+		CameraCheck();
+	}
+	
+	public void checkHud() {
+		if (base.gethud() != null)
+		{
+			if (base.gethud().getChild(0).isVisible())
+				base.gethud().getChild(0).setVisible(false); //Hide the rest of the hud (leave messages to do them selves)
 		}
 	}
 	

@@ -87,7 +87,7 @@ public class receiver extends BroadcastReceiver {
 		private void purchaseStateChanged(Context context, String signedData, String signature)
 		{
 			Intent intent = new Intent(consts.ACTION_GET_PURCHASE_INFORMATION);
-			intent.setClass(context, Billing.class);
+			intent.setClass(context, BillingService.class);
 			intent.putExtra(consts.INAPP_SIGNED_DATA, signedData);
 			intent.putExtra(consts.INAPP_SIGNATURE, signature);
 			context.startService(intent);
@@ -102,7 +102,7 @@ public class receiver extends BroadcastReceiver {
 		private void notify(Context context, String notifyID)
 		{
 			Intent intent = new Intent(consts.ACTION_GET_PURCHASE_INFORMATION);
-			intent.setClass(context, Billing.class);
+			intent.setClass(context, BillingService.class);
 			intent.putExtra(consts.NOTIFICATION_ID, notifyID);
 			context.startService(intent);
 		}
@@ -113,7 +113,7 @@ public class receiver extends BroadcastReceiver {
 		private void checkResponseCode(Context context, long requestID, int responseCodeIndex)
 		{
 			Intent intent = new Intent(consts.ACTION_RESPONSE_CODE);
-			intent.setClass(context, Billing.class);
+			intent.setClass(context, BillingService.class);
 			intent.putExtra(consts.INAPP_REQUEST_ID, requestID);
 			intent.putExtra(consts.INAPP_RESPONSE_CODE, responseCodeIndex);
 			context.startService(intent);

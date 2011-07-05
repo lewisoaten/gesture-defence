@@ -7,6 +7,8 @@ package com.gesturedefence;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.anddev.andengine.audio.music.Music;
 import org.anddev.andengine.audio.music.MusicFactory;
@@ -44,6 +46,9 @@ import org.anddev.andengine.ui.activity.LayoutGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.gesture.Gesture;
 import android.gesture.GestureLibraries;
 import android.gesture.GestureLibrary;
@@ -54,10 +59,26 @@ import android.graphics.Color;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.Html;
+import android.text.SpannableStringBuilder;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
+import com.gesturedefence.billing.BillingService;
+import com.gesturedefence.billing.BillingService.RequestPurchase;
+import com.gesturedefence.billing.BillingService.RestoreTransactions;
+import com.gesturedefence.billing.PurchaseDatabase;
+import com.gesturedefence.billing.PurchaseObserver;
+import com.gesturedefence.billing.ResponseHandler;
+import com.gesturedefence.billing.consts;
+import com.gesturedefence.billing.consts.PurchaseState;
+import com.gesturedefence.billing.consts.ResponseCode;
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.Atracker;
@@ -200,6 +221,41 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	
 	public Notifications CustomNotifications;
 	
+	//Test STUFF
+	private static final String TAG = "GestureDefence";
+	
+	private static final String DB_INITIALIZED = "db_initialized";
+	
+	public BillingService mBillingService;
+	public gesturedefencebillingPurchaseObserver mPurchaseObserver;
+	public PurchaseDatabase mPurchaseDatabase;
+	public Cursor mOwnedItemsCursor;
+	public SimpleCursorAdapter mOwnedItemsAdapter;
+	
+	public Set<String> mOwnedItems = new HashSet<String>();
+	
+	public String mPayloadContent = null;
+	
+	public static final int DIALOG_CANNOT_CONNECT_ID = 1;
+	public static final int DIALOG_BILLING_NOT_SUPPORTED_ID = 2;
+	
+	public enum Managed { MANAGED, UNMANAGED }
+	
+	public static final CatalogEntry[] CATALOG = new CatalogEntry[] {
+        new CatalogEntry("android.test.purchased", R.string.android_test_purchased,
+                Managed.UNMANAGED),
+        new CatalogEntry("android.test.canceled", R.string.android_test_canceled,
+                Managed.UNMANAGED),
+        new CatalogEntry("android.test.refunded", R.string.android_test_refunded,
+                Managed.UNMANAGED),
+        new CatalogEntry("android.test.item_unavailable", R.string.android_test_item_unavailable,
+                Managed.UNMANAGED),
+	};
+	
+	public String mItemName;
+	public String mSku;
+	public CatalogAdapter mCatalogAdapter;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -302,7 +358,23 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);
 		
+		//Set the custom notification system up
+		CustomNotifications = new Notifications(GestureDefence.this);
+		
 		/* Setup Billing */
+		mPurchaseObserver = new gesturedefencebillingPurchaseObserver(handler);
+		mBillingService = new BillingService(GestureDefence.this);
+		mBillingService.setContext(GestureDefence.this);
+		
+		mPurchaseDatabase = new PurchaseDatabase(GestureDefence.this);
+		
+		ResponseHandler.register(mPurchaseObserver);
+		if (!mBillingService.checkBillingSupported()) {
+			CustomNotifications.addNotification("BILLING NOT SUPPORTED, SAY WHAT!!!!?");
+		} else
+		{
+			CustomNotifications.addNotification("BILLING is supported! WOO!");
+		}
 	}
 
 	@Override
@@ -352,7 +424,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		this.mEngine.getTextureManager().loadTexture(this.mFontTexture);
 		this.mEngine.getFontManager().loadFont(mFont);
 		
-		//Then create an instance of a Screenamanger
+		//Then create an instance of a Screenmanager
 		this.sm = new ScreenManager(this);
 	}
 	
@@ -368,8 +440,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		final Text textCenter = new Text(100, 60, this.mFont, "LOADING..", HorizontalAlign.CENTER);
 		loadScene.attachChild(textCenter);
 		
-		//Set the custom notification system up
-		CustomNotifications = new Notifications(GestureDefence.this);
+		
 		
 		/* OpenFeint Setup */		
 		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
@@ -487,7 +558,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 				} catch (final IOException e) {
 					//File not found
 				}
-				
+				loadHud();
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -533,6 +604,18 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	@Override
 	public boolean onMenuItemClicked(final MenuScene pMenuScene, final IMenuItem pMenuItem, final float pMenuItemLocalX, final float pMenuItemLocalY) {
 		return true;
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		ResponseHandler.unregister(mPurchaseObserver);
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		mBillingService.unbind();
 	}
 	
 	
@@ -642,17 +725,19 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	{ //Load the hud
 		if (this.hud == null) //If hud hasn't been loaded yet, run this
 		{
-			this.hud = new HUD();
+			this.hud = new HUD(2); // 2 Layers, 0 = In game bits, 1 = messages (allows to be displayed everywhere)
 			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 200, 0 + 20, mFont2, "XXXXXX / XXXXXX", "XXXXXX / XXXXXX".length());
-			this.hud.getLastChild().attachChild(sCastleHealth);
+			this.hud.getChild(0).attachChild(sCastleHealth);
 			GestureDefence.sCamera.setHUD(hud);
 			
 			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont2, "" + sMoney, "XXXXXX".length());
-			this.hud.getLastChild().attachChild(sMoneyText);
+			this.hud.getChild(0).attachChild(sMoneyText);
 			
 			sManaText = new ChangeableText(sCastleHealth.getX(), sCastleHealth.getY() + sCastleHealth.getHeight(), mFont2, "XXXXXX", "XXXXXX".length());
 			sManaText.setColor(0.0f, 0.0f, 0.8f);
-			this.hud.getLastChild().attachChild(sManaText);
+			this.hud.getChild(0).attachChild(sManaText);
+			
+			this.hud.getChild(0).setVisible(false);
 		}
 		
 		updateCastleHealth();
@@ -846,7 +931,173 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		}
 	}
 	
+	private void restoreDatabase() {
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        boolean initialized = prefs.getBoolean(DB_INITIALIZED, false);
+        if (!initialized) {
+            mBillingService.restoreTransactions();
+            CustomNotifications.addNotification("Restoring Transaction?");
+        }
+    }
+	
+	private void prependLogEntry(CharSequence cs) {
+        SpannableStringBuilder contents = new SpannableStringBuilder(cs);
+        contents.append('\n');
+        //contents.append(mLogTextView.getText());
+        //mLogTextView.setText(contents);
+    }
+	
+	private void logProductActivity(String product, String activity) {
+        SpannableStringBuilder contents = new SpannableStringBuilder();
+        contents.append(Html.fromHtml("<b>" + product + "</b>: "));
+        contents.append(activity);
+        prependLogEntry(contents);
+    }
+	
 	// ========================================
 	// Inner and Anonymous Classes
 	// ========================================
+	
+	private class gesturedefencebillingPurchaseObserver extends PurchaseObserver {
+		public gesturedefencebillingPurchaseObserver(Handler handler) {
+			super(GestureDefence.this, handler);
+		}
+		
+		@Override
+		public void onBillingSupported(boolean supported) {
+			if (consts.DEBUG) {
+				Log.i(TAG, "supported: " + supported);
+			}
+			if (supported) {
+				restoreDatabase();
+				//Some button setup
+			} else {
+				showDialog(DIALOG_BILLING_NOT_SUPPORTED_ID);
+			}
+		}
+		
+		@Override
+		public void onPurchaseStateChange(PurchaseState purchaseState, String itemId, int quantity, long purchaseTime, String developerPayLoad) {
+			if (consts.DEBUG) {
+				Log.i(TAG, "onPurchaseStateChange() itemId: " + itemId + " " + purchaseState);
+			}
+			
+			if (developerPayLoad == null) {
+				logProductActivity(itemId, purchaseState.toString());
+			} else {
+				logProductActivity(itemId, purchaseState + "\n\t" + developerPayLoad);
+			}
+			
+			if (purchaseState == PurchaseState.PURCHASED) {
+				mOwnedItems.add(itemId);
+			}
+			mCatalogAdapter.setOwnedItems(mOwnedItems);
+			mOwnedItemsCursor.requery();
+			}
+		
+		@Override
+		public void onRequestPurchaseResponse(RequestPurchase request, ResponseCode responseCode) {
+			if (consts.DEBUG) {
+				Log.d(TAG, request.mProductID + ": " + responseCode);
+			}
+			if (responseCode == ResponseCode.RESULT_OK) {
+				if (consts.DEBUG) {
+					Log.i(TAG, "purchase was successfully sent to server");
+				}
+				logProductActivity(request.mProductID, "send purchase request");
+			} else if (responseCode == ResponseCode.RESULT_USER_CANCELED) {
+				if (consts.DEBUG) {
+					Log.i(TAG, "user canceled purchase");
+				}
+				logProductActivity(request.mProductID, "dismissed pruchase dialog");
+			}  else {
+                if (consts.DEBUG) {
+                    Log.i(TAG, "purchase failed");
+                }
+                logProductActivity(request.mProductID, "request purchase returned " + responseCode);
+            }
+        }
+
+        @Override
+        public void onRestoreTransactionsResponse(RestoreTransactions request,
+                ResponseCode responseCode) {
+            if (responseCode == ResponseCode.RESULT_OK) {
+                if (consts.DEBUG) {
+                    Log.d(TAG, "completed RestoreTransactions request");
+                }
+                // Update the shared preferences so that we don't perform
+                // a RestoreTransactions again.
+                SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor edit = prefs.edit();
+                edit.putBoolean(DB_INITIALIZED, true);
+                edit.commit();
+            } else {
+                if (consts.DEBUG) {
+                    Log.d(TAG, "RestoreTransactions error: " + responseCode);
+                }
+            }
+		}
+	}
+	
+	public static class CatalogEntry {
+		public String sku;
+		public int nameId;
+		public Managed managed;
+		
+		public CatalogEntry(String sku, int nameId, Managed managed) {
+			this.sku = sku;
+			this.nameId = nameId;
+			this.managed = managed;
+		}
+	}
+	
+	/**
+     * An adapter used for displaying a catalog of products.  If a product is
+     * managed by Android Market and already purchased, then it will be "grayed-out" in
+     * the list and not selectable.
+     */
+    private static class CatalogAdapter extends ArrayAdapter<String> {
+        private CatalogEntry[] mCatalog;
+        private Set<String> mOwnedItems = new HashSet<String>();
+
+        public CatalogAdapter(Context context, CatalogEntry[] catalog) {
+            super(context, android.R.layout.simple_spinner_item);
+            mCatalog = catalog;
+            for (CatalogEntry element : catalog) {
+                add(context.getString(element.nameId));
+            }
+            //setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        }
+
+        public void setOwnedItems(Set<String> ownedItems) {
+            mOwnedItems = ownedItems;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public boolean areAllItemsEnabled() {
+            // Return false to have the adapter call isEnabled()
+            return false;
+        }
+
+        @Override
+        public boolean isEnabled(int position) {
+            // If the item at the given list position is not purchasable,
+            // then prevent the list item from being selected.
+            CatalogEntry entry = mCatalog[position];
+            if (entry.managed == Managed.MANAGED && mOwnedItems.contains(entry.sku)) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            // If the item at the given list position is not purchasable, then
+            // "gray out" the list item.
+            View view = super.getDropDownView(position, convertView, parent);
+            view.setEnabled(isEnabled(position));
+            return view;
+        }
+    }
 }

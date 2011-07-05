@@ -15,8 +15,8 @@ import android.content.IntentSender;
 import android.os.Handler;
 import android.util.Log;
 
-import com.gesturedefence.billing.Billing.RequestPurchase;
-import com.gesturedefence.billing.Billing.RestoreTransactions;
+import com.gesturedefence.billing.BillingService.RequestPurchase;
+import com.gesturedefence.billing.BillingService.RestoreTransactions;
 import com.gesturedefence.billing.consts.PurchaseState;
 import com.gesturedefence.billing.consts.ResponseCode;
 
