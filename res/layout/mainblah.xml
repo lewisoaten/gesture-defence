@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.gesture.GestureOverlayView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/gestures"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:layout_weight="1.0"
+	
+	android:eventsInterceptionEnabled="false"
+	android:gestureStrokeType="multiple" >
+	<org.anddev.andengine.opengl.view.RenderSurfaceView android:id="@+id/rendersurfaceview"
+				android:layout_width="fill_parent" 
+				android:layout_height="fill_parent"
+				android:layout_margin="0px" />
+	
+	<LinearLayout android:weightSum="50"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent" >
+		
+		<ListView android:id="@+id/storelistview"
+			android:layout_height="fill_parent"
+			android:layout_width="fill_parent" >
+		</ListView>
+	</LinearLayout>
+</android.gesture.GestureOverlayView>

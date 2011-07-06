@@ -42,7 +42,8 @@ import org.anddev.andengine.opengl.texture.TextureOptions;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
-import org.anddev.andengine.ui.activity.LayoutGameActivity;
+import org.anddev.andengine.opengl.view.RenderSurfaceView;
+import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
@@ -63,10 +64,13 @@ import android.text.Html;
 import android.text.SpannableStringBuilder;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
+import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
@@ -92,7 +96,7 @@ import com.openfeint.api.OpenFeint;
 import com.openfeint.api.OpenFeintDelegate;
 import com.openfeint.api.OpenFeintSettings;
 
-public class GestureDefence extends LayoutGameActivity implements IOnMenuItemClickListener, OnGesturePerformedListener {
+public class GestureDefence extends BaseGameActivity implements IOnMenuItemClickListener, OnGesturePerformedListener {
 	// ========================================
 	// Constants
 	// ========================================
@@ -256,6 +260,9 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	public String mSku;
 	public CatalogAdapter mCatalogAdapter;
 	
+	private ListView mOwnedItemstable;
+	private FrameLayout.LayoutParams OwnedItemsLayoutParams;
+	
 	// ========================================
 	// Constructors
 	// ========================================
@@ -336,13 +343,33 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	// ========================================
 	
 	@Override
-	protected int getLayoutID() { //Used to allow gesture overlay
-		return R.layout.main;
-	}
-	
-	@Override
-	protected int getRenderSurfaceViewID() { //Used to allow gesture overlay (Render Surface is the game area)
-		return R.id.rendersurfaceview;
+	protected void onSetContentView() {
+		final FrameLayout frameLayout = new FrameLayout(this);
+		final FrameLayout.LayoutParams frameLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.FILL_PARENT, FrameLayout.LayoutParams.FILL_PARENT);
+		
+		this.gestures = new GestureOverlayView(this);
+		this.gestures.setEventsInterceptionEnabled(false);
+		this.gestures.setGestureStrokeType(2);
+		final FrameLayout.LayoutParams gestureViewLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.FILL_PARENT, FrameLayout.LayoutParams.FILL_PARENT);
+		
+		
+		this.mRenderSurfaceView = new RenderSurfaceView(this);
+		mRenderSurfaceView.setRenderer(mEngine);
+		
+		this.mOwnedItemstable = new ListView(this);
+		OwnedItemsLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.RIGHT);
+		int height = 100;
+		OwnedItemsLayoutParams.topMargin = height / 2;
+		OwnedItemsLayoutParams.width = 200;
+		mOwnedItemstable.setVisibility(mOwnedItemstable.VISIBLE);
+		
+		final android.widget.FrameLayout.LayoutParams surfaceViewLayoutParams = new FrameLayout.LayoutParams(super.createSurfaceViewLayoutParams());
+		
+		frameLayout.addView(this.gestures, gestureViewLayoutParams);
+		frameLayout.addView(this.mRenderSurfaceView, surfaceViewLayoutParams);
+		frameLayout.addView(this.mOwnedItemstable, OwnedItemsLayoutParams);
+		
+		this.setContentView(frameLayout, frameLayoutParams);
 	}
 	
 	@Override
@@ -353,7 +380,7 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_SHORT).show();
 		};
 		
-		gestures = (GestureOverlayView) findViewById(R.id.gestures);
+		//gestures = (GestureOverlayView) findViewById(R.id.gestures);
 		gestures.setWillNotDraw(true);
 		gestures.setWillNotCacheDrawing(true);
 		gestures.addOnGesturePerformedListener(this);
@@ -362,19 +389,20 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 		CustomNotifications = new Notifications(GestureDefence.this);
 		
 		/* Setup Billing */
-		mPurchaseObserver = new gesturedefencebillingPurchaseObserver(handler);
+		mPurchaseObserver = new gesturedefencebillingPurchaseObserver(handler); //Slight pause?
 		mBillingService = new BillingService(GestureDefence.this);
 		mBillingService.setContext(GestureDefence.this);
-		
+
 		mPurchaseDatabase = new PurchaseDatabase(GestureDefence.this);
-		
+		setupBillingBits();
+
 		ResponseHandler.register(mPurchaseObserver);
 		if (!mBillingService.checkBillingSupported()) {
 			CustomNotifications.addNotification("BILLING NOT SUPPORTED, SAY WHAT!!!!?");
-		} else
-		{
+		} else {
 			CustomNotifications.addNotification("BILLING is supported! WOO!");
 		}
+				
 	}
 
 	@Override
@@ -607,6 +635,13 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	}
 	
 	@Override
+	protected void onStart() {
+		super.onStart();
+		ResponseHandler.register(mPurchaseObserver);
+		initializeOwnedItems();
+	}
+	
+	@Override
 	protected void onStop() {
 		super.onStop();
 		ResponseHandler.unregister(mPurchaseObserver);
@@ -615,7 +650,18 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		mPurchaseDatabase.close();
 		mBillingService.unbind();
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+	}
+	
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
 	}
 	
 	
@@ -954,6 +1000,50 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
         prependLogEntry(contents);
     }
 	
+	private void initializeOwnedItems() {
+		new Thread(new Runnable() {
+			public void run() {
+				doInitializeOwnedItems();
+			}
+		}).start();
+	}
+	
+	private void doInitializeOwnedItems() {
+		Cursor cursor = mPurchaseDatabase.queryAllPurchasedItems();
+		if (cursor == null) {
+			return;
+		}
+		
+		final Set<String> ownedItems = new HashSet<String>();
+		try {
+			int productIdCol = cursor.getColumnIndexOrThrow(PurchaseDatabase.PURCHASED_PRODUCT_ID_COL);
+			while (cursor.moveToNext()) {
+				String productId = cursor.getString(productIdCol);
+				ownedItems.add(productId);
+			}
+		} finally {
+			cursor.close();
+		}
+		
+		//Add set of owned items in a new runnable that runs on the Main Thread.
+		handler.post(new Runnable() {
+			public void run() {
+				mOwnedItems.addAll(ownedItems);
+				mCatalogAdapter.setOwnedItems(mOwnedItems);
+			}
+		});
+	}
+	
+	private void setupBillingBits() {
+		mCatalogAdapter = new CatalogAdapter(this, CATALOG);
+		mOwnedItemsCursor = mPurchaseDatabase.queryAllPurchasedItems();
+		startManagingCursor(mOwnedItemsCursor);
+		String[] from = new String[] { PurchaseDatabase.PURCHASED_PRODUCT_ID_COL, PurchaseDatabase.PURCHASED_QUANTITY_COL};
+		int[] to = new int[] { 0 };
+		mOwnedItemsAdapter = new SimpleCursorAdapter(this, 1, mOwnedItemsCursor, from, to);
+		mOwnedItemstable.setAdapter(mOwnedItemsAdapter);
+	}
+	
 	// ========================================
 	// Inner and Anonymous Classes
 	// ========================================
@@ -981,19 +1071,19 @@ public class GestureDefence extends LayoutGameActivity implements IOnMenuItemCli
 			if (consts.DEBUG) {
 				Log.i(TAG, "onPurchaseStateChange() itemId: " + itemId + " " + purchaseState);
 			}
-			
+
 			if (developerPayLoad == null) {
 				logProductActivity(itemId, purchaseState.toString());
 			} else {
 				logProductActivity(itemId, purchaseState + "\n\t" + developerPayLoad);
 			}
-			
+
 			if (purchaseState == PurchaseState.PURCHASED) {
 				mOwnedItems.add(itemId);
 			}
 			mCatalogAdapter.setOwnedItems(mOwnedItems);
 			mOwnedItemsCursor.requery();
-			}
+		}
 		
 		@Override
 		public void onRequestPurchaseResponse(RequestPurchase request, ResponseCode responseCode) {
