@@ -39,8 +39,9 @@ import org.anddev.andengine.opengl.font.Font;
 import org.anddev.andengine.opengl.font.FontFactory;
 import org.anddev.andengine.opengl.texture.Texture;
 import org.anddev.andengine.opengl.texture.TextureOptions;
+import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
+import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
-import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.opengl.view.RenderSurfaceView;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
@@ -117,35 +118,35 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public EntityDetachRunnablePoolUpdateHandler sRemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
-	private Texture mAutoParallaxBackgroundTexture; //Background scrolling texture, holds each of the textures for the background
+	private BitmapTextureAtlas mAutoParallaxBackgroundTexture; //Background scrolling texture, holds each of the textures for the background
 	
 	private TextureRegion mParallaxLayerBack; //Back layer for Parallax background
 	private TextureRegion mParallaxLayerFront; //Front layer for Parallax background
 	
 	public AutoParallaxBackground autoParallaxBackground; //Parallax background
 	
-	private Texture mFontTexture; //Font one texture
+	private BitmapTextureAtlas mFontTexture; //Font one texture
 	public Font mFont; //Font one settings
 	
-	private Texture mFontTexture2; //Font two texture
+	private BitmapTextureAtlas mFontTexture2; //Font two texture
 	public Font mFont2; //Font two settings
 	
-	private Texture newEnemyTexture; //Enemy one Texture & region
+	private BitmapTextureAtlas newEnemyTexture; //Enemy one Texture & region
 	private TiledTextureRegion sEnemyTextureRegion;
 	
-	private Texture newEnemyTexture2; //Enemy two Texture & region
+	private BitmapTextureAtlas newEnemyTexture2; //Enemy two Texture & region
 	private TiledTextureRegion sEnemyTextureRegion2;
 	
-	private Texture mCastleTexture; //Castle texture & region
+	private BitmapTextureAtlas mCastleTexture; //Castle texture & region
 	private TextureRegion mCastleTextureRegion;
 	private static ChangeableText sCastleHealth; //Changeable text item for castle health
 	public Castle sCastle; //Instance of custom castle entity
 	
-	private Texture mLightningTexture;
+	private BitmapTextureAtlas mLightningTexture;
 	private TiledTextureRegion mLightningTextureRegion;
 	public AnimatedSprite lightning;
 	
-	private Texture mManaTexture;
+	private BitmapTextureAtlas mManaTexture;
 	private TextureRegion mManaTextureRegion;
 	
 	private HUD hud; //In-game hud
@@ -174,13 +175,13 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	/* New menu texture's
 	 * These currently placeholder's
 	 */
-	private Texture mStartButton;
+	private BitmapTextureAtlas mStartButton;
 	private TextureRegion mStartButtonRegion;
-	private Texture mQuitButton;
+	private BitmapTextureAtlas mQuitButton;
 	private TextureRegion mQuitButtonRegion;
-	private Texture mBuyButton;
+	private BitmapTextureAtlas mBuyButton;
 	private TextureRegion mBuyButtonRegion;
-	private Texture mNextWaveButton;
+	private BitmapTextureAtlas mNextWaveButton;
 	private TextureRegion mNextWaveButtonRegion;
 	
 	/* Sounds */
@@ -445,7 +446,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	@Override
 	public void onLoadResources() {
 		/* Load Font settings*/
-		this.mFontTexture = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.mFontTexture = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		
 		FontFactory.setAssetBasePath("font/");
 		this.mFont = FontFactory.createFromAsset(this.mFontTexture, this, "Capture it.ttf", 48, true, Color.WHITE);
@@ -493,16 +494,16 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				loadScene.unregisterUpdateHandler(pTimerHandler); //Unload the timer, save resources and prevents running twice!
 				
 				/* Smaller font texture */
-				GestureDefence.this.mFontTexture2 = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mFontTexture2 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 				FontFactory.setAssetBasePath("font/");
 				GestureDefence.this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mFontTexture2);
 				GestureDefence.this.getEngine().getFontManager().loadFont(mFont2);
 				
 				/* Initialise the background images, into scrolling background (parallax background) */
-				GestureDefence.this.mAutoParallaxBackgroundTexture = new Texture(1024, 1024, TextureOptions.DEFAULT);
-				GestureDefence.this.setParallaxLayerBack(TextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this, "gfx/temp_background.png", 0, 0));
-				GestureDefence.this.setParallaxLayerFront(TextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this,"gfx/temp_clouds.png", 0, 650));
+				GestureDefence.this.mAutoParallaxBackgroundTexture = new BitmapTextureAtlas(1024, 1024, TextureOptions.DEFAULT);
+				GestureDefence.this.setParallaxLayerBack(BitmapTextureAtlasTextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this, "gfx/temp_background.png", 0, 0));
+				GestureDefence.this.setParallaxLayerFront(BitmapTextureAtlasTextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this,"gfx/temp_clouds.png", 0, 650));
 				
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mAutoParallaxBackgroundTexture);
 				
@@ -515,36 +516,36 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(-10.0f, GestureDefence.this.backgroundSprite3));
 				
 				/* New animated Enemy Sprite's */
-				GestureDefence.this.newEnemyTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.sEnemyTextureRegion = TextureRegionFactory.createTiledFromAsset(newEnemyTexture, GestureDefence.this, "gfx/enemy_1.png", 0, 0, 3, 4);
-				GestureDefence.this.newEnemyTexture2 = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.sEnemyTextureRegion2 = TextureRegionFactory.createTiledFromAsset(newEnemyTexture2, GestureDefence.this, "gfx/enemy_2.png", 0, 0, 3, 4);
+				GestureDefence.this.newEnemyTexture = new BitmapTextureAtlas(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.sEnemyTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(newEnemyTexture, GestureDefence.this, "gfx/enemy_1.png", 0, 0, 3, 4);
+				GestureDefence.this.newEnemyTexture2 = new BitmapTextureAtlas(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.sEnemyTextureRegion2 = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(newEnemyTexture2, GestureDefence.this, "gfx/enemy_2.png", 0, 0, 3, 4);
 				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.newEnemyTexture, GestureDefence.this.newEnemyTexture2);
 				
 				/* Lightning texture sprite */
-				GestureDefence.this.mLightningTexture = new Texture(1024, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mLightningTextureRegion = TextureRegionFactory.createTiledFromAsset(mLightningTexture, GestureDefence.this, "gfx/lightning.png", 0, 0, 6, 1);
+				GestureDefence.this.mLightningTexture = new BitmapTextureAtlas(1024, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mLightningTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(mLightningTexture, GestureDefence.this, "gfx/lightning.png", 0, 0, 6, 1);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mLightningTexture);
 				
 				/* Mana texture */
-				GestureDefence.this.mManaTexture = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mManaTextureRegion = TextureRegionFactory.createFromAsset(mManaTexture, GestureDefence.this, "gfx/mana.png", 0, 0);
+				GestureDefence.this.mManaTexture = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mManaTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mManaTexture, GestureDefence.this, "gfx/mana.png", 0, 0);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mManaTexture);
 				
 				/* Load castle sprite */
-				GestureDefence.this.mCastleTexture = new Texture(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mCastleTextureRegion = TextureRegionFactory.createFromAsset(mCastleTexture, GestureDefence.this, "gfx/crappy_castle.png", 0, 0);
+				GestureDefence.this.mCastleTexture = new BitmapTextureAtlas(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mCastleTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mCastleTexture, GestureDefence.this, "gfx/crappy_castle.png", 0, 0);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mCastleTexture);
 				
 				/* Load menu buttons */
-				GestureDefence.this.mStartButton = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mStartButtonRegion = TextureRegionFactory.createFromAsset(mStartButton, GestureDefence.this, "gfx/start_button.png", 0, 0);
-				GestureDefence.this.mQuitButton = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mQuitButtonRegion = TextureRegionFactory.createFromAsset(mQuitButton, GestureDefence.this, "gfx/quit_button.png", 0, 0);
-				GestureDefence.this.mBuyButton = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mBuyButtonRegion = TextureRegionFactory.createFromAsset(mBuyButton, GestureDefence.this, "gfx/buy_button.png", 0, 0);
-				GestureDefence.this.mNextWaveButton = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				GestureDefence.this.mNextWaveButtonRegion = TextureRegionFactory.createFromAsset(mNextWaveButton, GestureDefence.this, "gfx/next_wave_button.png", 0, 0);
+				GestureDefence.this.mStartButton = new BitmapTextureAtlas(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mStartButtonRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mStartButton, GestureDefence.this, "gfx/start_button.png", 0, 0);
+				GestureDefence.this.mQuitButton = new BitmapTextureAtlas(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mQuitButtonRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mQuitButton, GestureDefence.this, "gfx/quit_button.png", 0, 0);
+				GestureDefence.this.mBuyButton = new BitmapTextureAtlas(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mBuyButtonRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mBuyButton, GestureDefence.this, "gfx/buy_button.png", 0, 0);
+				GestureDefence.this.mNextWaveButton = new BitmapTextureAtlas(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mNextWaveButtonRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mNextWaveButton, GestureDefence.this, "gfx/next_wave_button.png", 0, 0);
 				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.mStartButton, GestureDefence.this.mQuitButton, GestureDefence.this.mBuyButton, GestureDefence.this.mNextWaveButton);
 				
 				GestureDefence.this.sRemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
@@ -771,19 +772,21 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	{ //Load the hud
 		if (this.hud == null) //If hud hasn't been loaded yet, run this
 		{
-			this.hud = new HUD(2); // 2 Layers, 0 = In game bits, 1 = messages (allows to be displayed everywhere)
+			this.hud = new HUD(); // 2 Layers, 0 = In game bits, 1 = messages (allows to be displayed everywhere)
 			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 200, 0 + 20, mFont2, "XXXXXX / XXXXXX", "XXXXXX / XXXXXX".length());
-			this.hud.getChild(0).attachChild(sCastleHealth);
-			GestureDefence.sCamera.setHUD(hud);
+			this.hud.attachChild(sCastleHealth);
+			this.hud.getChild(this.hud.getChildIndex(sCastleHealth)).setVisible(false);
 			
 			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont2, "" + sMoney, "XXXXXX".length());
-			this.hud.getChild(0).attachChild(sMoneyText);
+			this.hud.attachChild(sMoneyText);
+			this.hud.getChild(this.hud.getChildIndex(sMoneyText)).setVisible(false);
 			
 			sManaText = new ChangeableText(sCastleHealth.getX(), sCastleHealth.getY() + sCastleHealth.getHeight(), mFont2, "XXXXXX", "XXXXXX".length());
 			sManaText.setColor(0.0f, 0.0f, 0.8f);
-			this.hud.getChild(0).attachChild(sManaText);
+			this.hud.attachChild(sManaText);
+			this.hud.getChild(this.hud.getChildIndex(sManaText)).setVisible(false);
 			
-			this.hud.getChild(0).setVisible(false);
+			GestureDefence.sCamera.setHUD(hud);
 		}
 		
 		updateCastleHealth();

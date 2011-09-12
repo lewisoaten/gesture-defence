@@ -167,7 +167,7 @@ public class Enemy extends AnimatedSprite {
 					 * recommended by andengine author */
 					final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
 					//Use set, NOT setEntity, if no parent, null pointer exception!
-					pPoolItem.set(this,this.getParent());
+					pPoolItem.setEntity(this.getParent());
 					base.sRemoveStuff.postPoolItem(pPoolItem);
 					
 					base.AchieveTracker.firstKill(); //Boom kill

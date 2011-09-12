@@ -14,10 +14,10 @@ import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.opengl.font.Font;
 import org.anddev.andengine.opengl.font.FontFactory;
-import org.anddev.andengine.opengl.texture.Texture;
 import org.anddev.andengine.opengl.texture.TextureOptions;
+import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
+import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
-import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 
 import android.graphics.Color;
 
@@ -40,7 +40,7 @@ public class Notifications {
 		private GestureDefence base; //Instance of GestureDefence
 		private ArrayList<String> mMessages = new ArrayList<String>();
 		
-		private Texture mFontTexture3; //Font for openfeint notifications
+		private BitmapTextureAtlas mFontTexture3; //Font for openfeint notifications
 		private Font mFont3; //Font for openfeint notifications
 		
 		private ChangeableText theNotification;
@@ -50,10 +50,10 @@ public class Notifications {
 		
 		private Scene theSceneShowing;
 		
-		private Texture OFLogo;
+		private BitmapTextureAtlas OFLogo;
 		private TextureRegion OFLogoRegion;
 		private Sprite smallOFLogo;
-		private Texture backDrop;
+		private BitmapTextureAtlas backDrop;
 		private TextureRegion BackDropRegion;
 		private Sprite NotificationBackDrop;
 		
@@ -68,20 +68,20 @@ public class Notifications {
 			this.base = baseThing;
 			
 			// Notification font
-			this.mFontTexture3 = new Texture(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+			this.mFontTexture3 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 			FontFactory.setAssetBasePath("font/");
 			this.mFont3 = FontFactory.createFromAsset(this.mFontTexture3, base, "CGF Locust Resistance.ttf", 12, true, Color.WHITE);
 			base.getEngine().getTextureManager().loadTexture(this.mFontTexture3);
 			base.getEngine().getFontManager().loadFont(mFont3);
 			
-			this.OFLogo = new Texture(32,32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-			this.OFLogoRegion = TextureRegionFactory.createFromAsset(this.OFLogo, base, "gfx/logo.small.of.png", 10, 10);
+			this.OFLogo = new BitmapTextureAtlas(32,32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+			this.OFLogoRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.OFLogo, base, "gfx/logo.small.of.png", 10, 10);
 			base.getEngine().getTextureManager().loadTexture(OFLogo);
 			
 			smallOFLogo = new Sprite(Xpos + 10, Ypos + 2, this.OFLogoRegion);
 			
-			this.backDrop = new Texture(1024, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-			this.BackDropRegion = TextureRegionFactory.createFromAsset(this.backDrop, base, "gfx/notification_backdrop.png", 0, 0);
+			this.backDrop = new BitmapTextureAtlas(1024, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+			this.BackDropRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.backDrop, base, "gfx/notification_backdrop.png", 0, 0);
 			base.getEngine().getTextureManager().loadTexture(backDrop);
 			
 			NotificationBackDrop = new Sprite(Xpos, Ypos, this.BackDropRegion);
@@ -90,10 +90,13 @@ public class Notifications {
 			
 			if (base.gethud() != null)
 			{
-				base.gethud().getChild(1).attachChild(NotificationBackDrop);
-				base.gethud().getChild(1).attachChild(theNotification);
-				base.gethud().getChild(1).attachChild(smallOFLogo);
-				base.gethud().getChild(1).setVisible(false);
+				base.gethud().attachChild(NotificationBackDrop);
+				base.gethud().attachChild(theNotification);
+				base.gethud().attachChild(smallOFLogo);
+				base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(false);
+				base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(false);
+				base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(false);
+				
 			}
 			
 			TimerHandler NotificationChecks; //Register a new timer, check every second check for new messages!
@@ -146,13 +149,15 @@ public class Notifications {
 			// Outputs the message
 			this.mAlreadyShowing = true; // Tell it that we are now showing a message
 			theNotification.setText(mMessages.get(indicator));
-			if (base.gethud().getChild(1).getChildCount() <= 0)
+			if (base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)) == null)
 			{
-				base.gethud().getChild(1).attachChild(NotificationBackDrop);
-				base.gethud().getChild(1).attachChild(theNotification);
-				base.gethud().getChild(1).attachChild(smallOFLogo);
+				base.gethud().attachChild(NotificationBackDrop);
+				base.gethud().attachChild(theNotification);
+				base.gethud().attachChild(smallOFLogo);
 			}
-			base.gethud().getChild(1).setVisible(true);
+			base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(true);
+			base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(true);
+			base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(true);
 
 			base.gethud().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
 				@Override
@@ -163,7 +168,9 @@ public class Notifications {
 						mMessages.remove(lastShowedMessage);
 						lastShowedMessage = -1;
 					}
-					base.gethud().getChild(1).setVisible(false);
+					base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(false);
+					base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(false);
+					base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(false);
 					mAlreadyShowing = false; // Set to make sure it knows the current notification is over
 				}
 			}));
