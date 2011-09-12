@@ -174,7 +174,7 @@ public class ScreenManager {
 			GameScreen.registerUpdateHandler(base.sRemoveStuff);
 			
 			base.loadCastle(base.getCameraWidth() - (base.getCastleTexture().getWidth()), base.getCameraHeight() - 60 - base.getCastleTexture().getHeight());
-			base.loadHud();
+			base.CustomHUD.RefreshHUD();
 			
 			base.sm.GameScreen.registerUpdateHandler(new IUpdateHandler() {
 				@Override
@@ -234,7 +234,7 @@ public class ScreenManager {
 										if ((base.mana - 500) >= 0)
 										{
 											base.mana -= 500;
-											base.updateManaValue();
+											base.CustomHUD.updateManaValue();
 											float theX = MathUtils.random(-10.0f, 10.0f);
 											float theY = MathUtils.random(-10.0f, 10.0f);
 											base.sCamera.offsetCenter(theX, theY);
@@ -274,16 +274,14 @@ public class ScreenManager {
 			});
 		}
 		
-		if (base.gethud() != null)
-			base.gethud().getChild(0).setVisible(true);
+		if (base.CustomHUD.getHud() != null)
+			base.CustomHUD.HideValues(false);
 		
 		GameScreen.setOnAreaTouchTraversalFrontToBack();
 		base.getEngine().setScene(GameScreen);
 		CameraSet();
 		
-		base.updateCashValue(); // Update the display's (if game loaded makes sure it refreshes)
-		base.updateCastleHealth();
-		base.updateManaValue();
+		base.CustomHUD.RefreshHUD(); // Update the display's (if game loaded makes sure it refreshes)
 	}
 	
 	public void NewWaveScreen()
@@ -484,9 +482,9 @@ public class ScreenManager {
 				public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
 					base.getEngine().setScene(QuitMenuCameFrom);
 					if (QuitMenuCameFrom == GameScreen)
-						if (base.gethud() != null)
-							if (base.gethud().isVisible() == false)
-								base.gethud().setVisible(true);
+						if (base.CustomHUD.getHud() != null)
+							if (base.CustomHUD.getHud().isVisible() == false)
+								base.CustomHUD.getHud().setVisible(true);
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};
@@ -615,10 +613,9 @@ public class ScreenManager {
 	}
 	
 	public void checkHud() {
-		if (base.gethud() != null)
+		if (base.CustomHUD.getHud() != null)
 		{
-			if (base.gethud().getChild(0).isVisible())
-				base.gethud().getChild(0).setVisible(false); //Hide the rest of the hud (leave messages to do them selves)
+			base.CustomHUD.HideValues(true); //Hide the rest of the HUD (leave messages to do themselves)
 		}
 	}
 	

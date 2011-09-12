@@ -16,7 +16,6 @@ import org.anddev.andengine.audio.sound.Sound;
 import org.anddev.andengine.audio.sound.SoundFactory;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
-import org.anddev.andengine.engine.camera.hud.HUD;
 import org.anddev.andengine.engine.handler.timer.ITimerCallback;
 import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.engine.options.EngineOptions;
@@ -32,7 +31,6 @@ import org.anddev.andengine.entity.scene.menu.MenuScene.IOnMenuItemClickListener
 import org.anddev.andengine.entity.scene.menu.item.IMenuItem;
 import org.anddev.andengine.entity.sprite.AnimatedSprite;
 import org.anddev.andengine.entity.sprite.Sprite;
-import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.entity.text.Text;
 import org.anddev.andengine.entity.util.FPSLogger;
 import org.anddev.andengine.opengl.font.Font;
@@ -88,6 +86,7 @@ import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.FileOperations;
+import com.gesturedefence.util.HUD_revamp;
 import com.gesturedefence.util.Notifications;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
@@ -128,6 +127,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private BitmapTextureAtlas mFontTexture; //Font one texture
 	public Font mFont; //Font one settings
 	
+	/* Font Texture */
 	private BitmapTextureAtlas mFontTexture2; //Font two texture
 	public Font mFont2; //Font two settings
 	
@@ -139,7 +139,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private BitmapTextureAtlas mCastleTexture; //Castle texture & region
 	private TextureRegion mCastleTextureRegion;
-	private static ChangeableText sCastleHealth; //Changeable text item for castle health
+	
 	public Castle sCastle; //Instance of custom castle entity
 	
 	private BitmapTextureAtlas mLightningTexture;
@@ -148,10 +148,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private BitmapTextureAtlas mManaTexture;
 	private TextureRegion mManaTextureRegion;
-	
-	private HUD hud; //In-game hud
-	private static ChangeableText sMoneyText; //Changeable text item for Current money
-	private ChangeableText sManaText; //Mana hud text
 	
 	public Wave theWave; // Instance of custom Wave class
 	
@@ -225,6 +221,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private static final String OFgameSecret = "j09MMl5XeCtYZMHFRBolC8ESCB08QZVjFYBbzhgn8";
 	
 	public Notifications CustomNotifications;
+	public HUD_revamp CustomHUD;
 	
 	//Test STUFF
 	private static final String TAG = "GestureDefence";
@@ -333,10 +330,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public int getCameraHeight() {
 		return CAMERA_HEIGHT;
-	}
-	
-	public HUD gethud() {
-			return GestureDefence.this.hud;
 	}
 	
 	// ========================================
@@ -493,19 +486,19 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			public void onTimePassed(final TimerHandler pTimerHandler) {
 				loadScene.unregisterUpdateHandler(pTimerHandler); //Unload the timer, save resources and prevents running twice!
 				
-				/* Smaller font texture */
-				GestureDefence.this.mFontTexture2 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				FontFactory.setAssetBasePath("font/");
-				GestureDefence.this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
-				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mFontTexture2);
-				GestureDefence.this.getEngine().getFontManager().loadFont(mFont2);
-				
 				/* Initialise the background images, into scrolling background (parallax background) */
 				GestureDefence.this.mAutoParallaxBackgroundTexture = new BitmapTextureAtlas(1024, 1024, TextureOptions.DEFAULT);
 				GestureDefence.this.setParallaxLayerBack(BitmapTextureAtlasTextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this, "gfx/temp_background.png", 0, 0));
 				GestureDefence.this.setParallaxLayerFront(BitmapTextureAtlasTextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this,"gfx/temp_clouds.png", 0, 650));
 				
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mAutoParallaxBackgroundTexture);
+				
+				/* Setup Smaller Texture Fonts */
+				GestureDefence.this.mFontTexture2 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				FontFactory.setAssetBasePath("font/");
+				GestureDefence.this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
+				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mFontTexture2);
+				GestureDefence.this.getEngine().getFontManager().loadFont(mFont2);
 				
 				GestureDefence.this.autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 5);
 				GestureDefence.this.backgroundSprite1 = new Sprite(0, getCameraHeight() - getParallaxLayerBack().getHeight(), getParallaxLayerBack());
@@ -587,7 +580,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				} catch (final IOException e) {
 					//File not found
 				}
-				loadHud();
+				CustomHUD = new HUD_revamp(GestureDefence.this);
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -711,8 +704,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				sCastle.increaseHealth(100);
 				GestureDefence.this.theWave.mCashAmountItem.setText("CASH : " + sMoney);
 				GestureDefence.this.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.this.sCastle.getCurrentHealth() + "/ " + GestureDefence.this.sCastle.getMaxHealth());
-				GestureDefence.this.updateCashValue();
-				GestureDefence.this.updateCastleHealth();
+				GestureDefence.this.CustomHUD.updateCashValue();
+				GestureDefence.this.CustomHUD.updateCastleHealth();
 			}
 			return true;
 		case 7:
@@ -723,8 +716,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				sCastle.increaseMaxHealth(250);
 				GestureDefence.this.theWave.mCashAmountItem.setText("CASH : " + sMoney);
 				GestureDefence.this.theWave.mBuyMenuItem.setText("HEALTH : " + GestureDefence.this.sCastle.getCurrentHealth() + "/ " + GestureDefence.this.sCastle.getMaxHealth());
-				GestureDefence.this.updateCashValue();
-				GestureDefence.this.updateCastleHealth();
+				GestureDefence.this.CustomHUD.updateCashValue();
+				GestureDefence.this.CustomHUD.updateCastleHealth();
 			}
 			return true;
 		case 9:
@@ -736,12 +729,12 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			GestureDefence.this.sMoney = 0;
 			GestureDefence.this.mMoneyEarned = 0;
 			GestureDefence.this.sEnemyCount = 0;
-			GestureDefence.this.updateCashValue();
+			GestureDefence.this.CustomHUD.updateCashValue();
 			GestureDefence.this.sCastle.setCurrentHealth(3000);
 			GestureDefence.this.sCastle.setMaxHealth(3000);
-			GestureDefence.this.updateCastleHealth();
+			GestureDefence.this.CustomHUD.updateCastleHealth();
 			GestureDefence.this.mana = 0;
-			GestureDefence.this.updateManaValue();
+			GestureDefence.this.CustomHUD.updateManaValue();
 			
 			/*remove all sprite's still in the game (enemies etc)
 			 * This needs optimising, like making it only remove enemies!
@@ -764,34 +757,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public void loadCastle(float X, float Y) { //Load the castle sprite at X/Y cords
 		GestureDefence.this.sCastle.setPosition(X, Y);
 		GestureDefence.this.sm.GameScreen.getChild(2).attachChild(sCastle);
-	}
-	
-	
-	
-	public void loadHud()
-	{ //Load the hud
-		if (this.hud == null) //If hud hasn't been loaded yet, run this
-		{
-			this.hud = new HUD(); // 2 Layers, 0 = In game bits, 1 = messages (allows to be displayed everywhere)
-			sCastleHealth = new ChangeableText(CAMERA_WIDTH - 200, 0 + 20, mFont2, "XXXXXX / XXXXXX", "XXXXXX / XXXXXX".length());
-			this.hud.attachChild(sCastleHealth);
-			this.hud.getChild(this.hud.getChildIndex(sCastleHealth)).setVisible(false);
-			
-			sMoneyText = new ChangeableText(0 + 100, 0 + 20, mFont2, "" + sMoney, "XXXXXX".length());
-			this.hud.attachChild(sMoneyText);
-			this.hud.getChild(this.hud.getChildIndex(sMoneyText)).setVisible(false);
-			
-			sManaText = new ChangeableText(sCastleHealth.getX(), sCastleHealth.getY() + sCastleHealth.getHeight(), mFont2, "XXXXXX", "XXXXXX".length());
-			sManaText.setColor(0.0f, 0.0f, 0.8f);
-			this.hud.attachChild(sManaText);
-			this.hud.getChild(this.hud.getChildIndex(sManaText)).setVisible(false);
-			
-			GestureDefence.sCamera.setHUD(hud);
-		}
-		
-		updateCastleHealth();
-		updateCashValue();
-		updateManaValue();
 	}
 	
 	public void loadNewEnemy(final float X, final float Y, final int type) {
@@ -818,21 +783,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
 		GestureDefence.this.sEnemyCount++; //Increase the enemy count
 		GestureDefence.this.mOnScreenEnemies++;
-	}
-	
-	public void updateCastleHealth()
-	{ //Refresh's the castle's health display
-		sCastleHealth.setText(GestureDefence.this.sCastle.getCurrentHealth() + " / " + GestureDefence.this.sCastle.getMaxHealth());
-	}
-	
-	public void updateCashValue()
-	{ //Refresh's the current money display
-		sMoneyText.setText("" + GestureDefence.this.sMoney);
-	}
-	
-	public void updateManaValue()
-	{ //Refresh's the current money display
-		sManaText.setText("" + GestureDefence.this.mana);
 	}
 	
 	public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) { //Used to detect the gesture!!
@@ -960,7 +910,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 								GestureDefence.this.mLightningBoltY = lightningPosY;
 								GestureDefence.this.mLightningBolt = true;
 								
-								GestureDefence.this.updateManaValue();
+								GestureDefence.this.CustomHUD.updateManaValue();
 							}
 						}
 						

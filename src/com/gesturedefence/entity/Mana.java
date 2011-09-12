@@ -102,7 +102,7 @@ public class Mana extends Sprite {
 					{
 						this.killIT = true;
 						base.mana += 250;
-						base.updateManaValue();
+						base.CustomHUD.updateManaValue();
 					}
 					break;
 			}

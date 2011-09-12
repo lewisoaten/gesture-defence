@@ -88,15 +88,14 @@ public class Notifications {
 			
 			theNotification = new ChangeableText(Xpos + 15 + smallOFLogo.getWidth(), Ypos + 4, mFont3, "", base.getCameraWidth());
 			
-			if (base.gethud() != null)
+			if (base.CustomHUD != null)
 			{
-				base.gethud().attachChild(NotificationBackDrop);
-				base.gethud().attachChild(theNotification);
-				base.gethud().attachChild(smallOFLogo);
-				base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(false);
-				base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(false);
-				base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(false);
-				
+				base.CustomHUD.attachChild(NotificationBackDrop);
+				base.CustomHUD.attachChild(theNotification);
+				base.CustomHUD.attachChild(smallOFLogo);
+				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(false);
+				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(false);
+				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(false);	
 			}
 			
 			TimerHandler NotificationChecks; //Register a new timer, check every second check for new messages!
@@ -132,7 +131,7 @@ public class Notifications {
 				try {
 				if (mMessages.size() > 0) //Make sure we have some messages!
 				{
-					if (base.gethud() != null)
+					if (base.CustomHUD.getHud() != null)
 					{ //Makes sure not to crash if it hasn't been made yet!
 						showMessage(0);
 						lastShowedMessage = 0;
@@ -149,28 +148,28 @@ public class Notifications {
 			// Outputs the message
 			this.mAlreadyShowing = true; // Tell it that we are now showing a message
 			theNotification.setText(mMessages.get(indicator));
-			if (base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)) == null)
+			if (base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)) == null)
 			{
-				base.gethud().attachChild(NotificationBackDrop);
-				base.gethud().attachChild(theNotification);
-				base.gethud().attachChild(smallOFLogo);
+				base.CustomHUD.attachChild(NotificationBackDrop);
+				base.CustomHUD.attachChild(theNotification);
+				base.CustomHUD.attachChild(smallOFLogo);
 			}
-			base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(true);
-			base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(true);
-			base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(true);
+			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(true);
+			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(true);
+			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(true);
 
-			base.gethud().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
+			base.CustomHUD.getHud().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
 				@Override
 				public void onTimePassed(TimerHandler pTimerHandler) {
-					base.gethud().unregisterUpdateHandler(pTimerHandler); // Remove the timer (prevent duplicates/issues)
+					base.CustomHUD.getHud().unregisterUpdateHandler(pTimerHandler); // Remove the timer (prevent duplicates/issues)
 					if (lastShowedMessage != -1)
 					{
 						mMessages.remove(lastShowedMessage);
 						lastShowedMessage = -1;
 					}
-					base.gethud().getChild(base.gethud().getChildIndex(NotificationBackDrop)).setVisible(false);
-					base.gethud().getChild(base.gethud().getChildIndex(theNotification)).setVisible(false);
-					base.gethud().getChild(base.gethud().getChildIndex(smallOFLogo)).setVisible(false);
+					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(false);
+					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(false);
+					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(false);
 					mAlreadyShowing = false; // Set to make sure it knows the current notification is over
 				}
 			}));

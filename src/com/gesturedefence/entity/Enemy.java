@@ -158,7 +158,7 @@ public class Enemy extends AnimatedSprite {
 					 * Also increase global kill count */
 					base.sMoney += this.mCashWorth;
 					base.mMoneyEarned += this.mCashWorth;
-					base.updateCashValue();
+					base.CustomHUD.updateCashValue();
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
 					
@@ -206,7 +206,7 @@ public class Enemy extends AnimatedSprite {
 					{
 						//Do ONE set of damage when the frame is in the right place (animation frame)
 						Castle.damageCastle(this.mAttackDamage);
-						base.updateCastleHealth();
+						base.CustomHUD.updateCastleHealth();
 						this.mAttackedTheCastle = true;
 						base.attack.play();
 					}
