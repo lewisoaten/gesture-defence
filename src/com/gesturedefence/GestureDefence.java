@@ -56,6 +56,8 @@ import android.gesture.GestureOverlayView.OnGesturePerformedListener;
 import android.gesture.Prediction;
 import android.graphics.Color;
 import android.graphics.RectF;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Html;
@@ -226,6 +228,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public Notifications CustomNotifications;
 	public HUD_revamp CustomHUD;
+	
+	private boolean hasGameLoaded = false;
 	
 	//Test STUFF
 	private static final String TAG = "GestureDefence";
@@ -449,7 +453,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				
 			GestureDefence.this.mCheckedRes = true;//working??
 		}
-	GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
+		GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
 		return new Engine(new EngineOptions(true, orientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera).setNeedsSound(true).setNeedsMusic(true));
 	}
 	
@@ -481,7 +485,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		
 		/* OpenFeint Setup */		
 		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
-		OpenFeint.initialize(GestureDefence.this, settings, new OpenFeintDelegate() {});
+		OpenFeint.initializeWithoutLoggingIn(GestureDefence.this, settings, new OpenFeintDelegate() {});
+		
+		hasGameLoaded = true;
 		
 		//Override openfeint notifications
 		Notification.setDelegate(new Delegate() {
@@ -657,6 +663,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	protected void onStop() {
 		super.onStop();
 		ResponseHandler.unregister(mPurchaseObserver);
+		if (hasGameLoaded)
+			GestureDefence.this.fileThingy.saveAchieveProgress();
 	}
 	
 	@Override
@@ -1023,6 +1031,20 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		int[] to = new int[] { 0 };
 		mOwnedItemsAdapter = new SimpleCursorAdapter(this, 1, mOwnedItemsCursor, from, to);
 		mOwnedItemstable.setAdapter(mOwnedItemsAdapter);
+	}
+	
+	/**
+	 * Simple check to see if there are any network connections available.
+	 * Returns true if there is at least one available or soon to be available (connecting).
+	 * Returns false if there are no networks to be found or connected.
+	 */
+	public boolean isOnline() {
+		ConnectivityManager cm =(ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo netInfo = cm.getActiveNetworkInfo();
+		if (netInfo != null && netInfo.isConnectedOrConnecting() ) {
+			return true;
+		}
+		return false;
 	}
 	
 	// ========================================

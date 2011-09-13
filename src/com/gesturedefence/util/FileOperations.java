@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -33,6 +34,7 @@ public class FileOperations {
 		private GestureDefence base; //Instance of GestureDefence
 		
 		private final String FILENAME = "save_game_file"; //Save file
+		private final String Achieve_FILENAME = "offline_progress";
 		private File externalStorageDir; // External storage directory
 		private File dir; // Directory for the files
 		
@@ -305,6 +307,114 @@ public class FileOperations {
 				mExternalStorageAvailiable = mExternalStorageWritable = false;
 				base.CustomNotifications.addNotification("Something is wrong with the external storage. Please check it.");
 			}
+		}
+		
+		public boolean saveAchieveProgress() {
+			//Self explanatory ?
+			ExternalStorageChecks();
+			
+			if (mExternalStorageAvailiable && mExternalStorageWritable)
+			{ // Check to see if we can save
+				try {
+					File file = new File(dir, Achieve_FILENAME);
+					FileOutputStream fos = new FileOutputStream(file);
+					OutputStreamWriter output = new OutputStreamWriter(fos);
+					BufferedWriter buf = new BufferedWriter(output);
+					
+					ArrayList<String> saveSettings = base.AchieveTracker.getSaveInfo();
+					
+					for (int i = 0; i < saveSettings.size(); i++) {
+						buf.write(saveSettings.get(i));
+						buf.newLine();
+					}
+	
+					buf.close();
+					output.close();
+					fos.close();
+					
+					return true;
+	
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					return false;
+				} catch (IOException e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+			return false;
+		}
+		
+		public boolean loadAchieveProgress(Context ctx)
+		{ //Self explanatory ?
+			ExternalStorageChecks();
+			
+			if (mExternalStorageAvailiable && mExternalStorageWritable)
+			{ //Check to make sure we can load first!
+				String string = "";
+				boolean of1048612 = false;
+				boolean of1048622 = false;
+				
+				try {
+					File file = new File(dir, Achieve_FILENAME);
+					FileInputStream fis = new FileInputStream(file);
+					InputStreamReader inputreader = new InputStreamReader(fis);
+					BufferedReader buffreader = new BufferedReader(inputreader);
+					string = buffreader.readLine();
+					
+					while ( string != null)
+					{
+						if (string.contains("1.1:"))
+						{
+							int pos = string.indexOf(":");
+							of1048612 = string.substring(pos + 1) != null;
+						}
+						if (string.contains("2.1:"))
+						{
+							int pos = string.indexOf(":");
+							of1048622 = string.substring(pos + 1) != null;
+						}
+						
+						string = buffreader.readLine();
+					}
+					
+					buffreader.close();
+					inputreader.close();
+					fis.close();
+					
+					base.AchieveTracker.setAchieve1(of1048612);
+					base.AchieveTracker.setAchieve2(of1048622);
+					
+					base.ButtonPress(3);			
+					
+					return true;
+					
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					return false;
+				} catch (IOException e) {
+					e.printStackTrace();
+					return false;
+				}
+			} else return false;
+		}
+		
+		public boolean CheckForAchieveProgressFile(Context ctx) {
+			ExternalStorageChecks();
+			
+			if (mExternalStorageAvailiable && mExternalStorageWritable)
+			{
+				File file = new File(dir, Achieve_FILENAME);
+				try {				
+					@SuppressWarnings("unused")
+					FileInputStream fis = new FileInputStream(file);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					return false;
+				};
+				return true;
+			}
+			return false;
 		}
 	
 	// ========================================
