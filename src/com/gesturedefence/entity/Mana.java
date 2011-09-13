@@ -67,9 +67,9 @@ public class Mana extends Sprite {
 			if (killIT)
 			{
 				base.sm.GameScreen.unregisterTouchArea(this);
-				final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
-				pPoolItem.setEntity(this.getParent());
-				base.sRemoveStuff.postPoolItem(pPoolItem);
+//				final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
+//				pPoolItem.setEntity(this.getParent());
+//				base.sRemoveStuff.postPoolItem(pPoolItem);
 			}
 			
 //			if (this.mX < 5.0f) //If it's off the screen (left)

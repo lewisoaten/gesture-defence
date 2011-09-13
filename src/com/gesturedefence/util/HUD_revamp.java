@@ -56,6 +56,7 @@ public class HUD_revamp extends HUD {
 				this.NewHud.getChild(this.NewHud.getChildIndex(sManaText)).setVisible(false); // Hide it
 				
 				base.sCamera.setHUD(NewHud); //Finally attach the new HUD to the game
+				base.sCamera.getHUD().setVisible(true);
 			}
 			
 			this.updateCashValue();

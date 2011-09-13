@@ -44,7 +44,6 @@ import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.opengl.view.RenderSurfaceView;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.HorizontalAlign;
-import org.anddev.andengine.util.pool.EntityDetachRunnablePoolUpdateHandler;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -85,6 +84,7 @@ import com.gesturedefence.billing.consts.ResponseCode;
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
 import com.gesturedefence.util.Atracker;
+import com.gesturedefence.util.EnemyPool;
 import com.gesturedefence.util.FileOperations;
 import com.gesturedefence.util.HUD_revamp;
 import com.gesturedefence.util.Notifications;
@@ -104,18 +104,20 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private static int CAMERA_WIDTH = 800; //Default camera width of the window
 	private static int CAMERA_HEIGHT = 480; //Default camera height of the window
 	
-	//buttons below, arnt really used now, may/will be removed at a later date
+	//buttons below, aren't really used now, may/will be removed at a later date
 	public static final int MENU_HEALTH = 1;
 	public static final int MENU_CASH = MENU_HEALTH + 1;
 	public static final int MENU_WAVE_NUMBER = MENU_CASH + 1;
+	
+	//New enemy pool's
+	private static EnemyPool ENEMY_POOL1; //Enemy type 1
+	private static EnemyPool ENEMY_POOL2; //Enemy type 2
 	
 	// ========================================
 	// Fields
 	// ========================================
 	
 	public static Camera sCamera;
-	
-	public EntityDetachRunnablePoolUpdateHandler sRemoveStuff; //Used to safely remove Animated Sprite's (enemies)
 	
 	private BitmapTextureAtlas mAutoParallaxBackgroundTexture; //Background scrolling texture, holds each of the textures for the background
 	
@@ -332,6 +334,15 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		return CAMERA_HEIGHT;
 	}
 	
+	public EnemyPool GetEnemyPool(int type) {
+		if (type == 1)
+			return ENEMY_POOL1;
+		else if (type == 2)
+			return ENEMY_POOL2;
+		else
+			return null;
+	}
+	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
 	// ========================================
@@ -462,8 +473,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		final Text textCenter = new Text(100, 60, this.mFont, "LOADING..", HorizontalAlign.CENTER);
 		loadScene.attachChild(textCenter);
 		
-		
-		
 		/* OpenFeint Setup */		
 		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
 		OpenFeint.initialize(GestureDefence.this, settings, new OpenFeintDelegate() {});
@@ -541,7 +550,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.mNextWaveButtonRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mNextWaveButton, GestureDefence.this, "gfx/next_wave_button.png", 0, 0);
 				GestureDefence.this.getEngine().getTextureManager().loadTextures(GestureDefence.this.mStartButton, GestureDefence.this.mQuitButton, GestureDefence.this.mBuyButton, GestureDefence.this.mNextWaveButton);
 				
-				GestureDefence.this.sRemoveStuff = new EntityDetachRunnablePoolUpdateHandler();
 				GestureDefence.this.sMoney = 0; //Initialise the money value, 0 for now
 				GestureDefence.this.theWave = new Wave(GestureDefence.this);
 				
@@ -580,7 +588,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				} catch (final IOException e) {
 					//File not found
 				}
+				
 				CustomHUD = new HUD_revamp(GestureDefence.this);
+				GestureDefence.this.ENEMY_POOL1 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion, GestureDefence.this);
+				GestureDefence.this.ENEMY_POOL2 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion2, GestureDefence.this);
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -739,7 +750,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			/*remove all sprite's still in the game (enemies etc)
 			 * This needs optimising, like making it only remove enemies!
 			 */
-			GestureDefence.this.sm.GameScreen.getChild(1).detachChildren();
+			//GestureDefence.this.sm.GameScreen.getChild(1).detachChildren();
 			GestureDefence.this.mOnScreenEnemies = 0;
 			GestureDefence.this.sm.GameScreen.getChild(3).detachChildren();
 			
@@ -761,24 +772,33 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public void loadNewEnemy(final float X, final float Y, final int type) {
 		final Enemy newEnemy;
-		/* Note the clone(), without this you get ISSUES! */;
+		
 		switch(type)
 		{
 		case 1:
 			//Enemy type 1 (standard)
-			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+			newEnemy = GestureDefence.this.ENEMY_POOL1.obtainPoolItem();
+			newEnemy.setXY(X, Y);
+			newEnemy.setType1();
 			break;
 		case 2:
 			//Enemy type 2
-			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion2.clone(), GestureDefence.this, 2);
+			newEnemy = GestureDefence.this.ENEMY_POOL2.obtainPoolItem();
 			newEnemy.setScale(1.5f);
+			newEnemy.setXY(X, Y);
+			newEnemy.setType2();
 			break;
 		default:
-			//Incase type specified is wrong, default to enemy type 1 texture
-			newEnemy = new Enemy(X, Y, GestureDefence.this.sEnemyTextureRegion.clone(), GestureDefence.this, 1);
+			//If type specified is wrong, default to enemy type 1 texture
+			newEnemy = GestureDefence.this.ENEMY_POOL1.obtainPoolItem();
+			newEnemy.setXY(X, Y);
+			newEnemy.setType1();
 			break;
 		}
-		GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
+		
+		if (newEnemy.isItNew()) {
+			GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
+		}
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
 		GestureDefence.this.sEnemyCount++; //Increase the enemy count

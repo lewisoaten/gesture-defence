@@ -13,7 +13,6 @@ import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.MathUtils;
-import org.anddev.andengine.util.pool.EntityDetachRunnablePoolItem;
 
 import com.gesturedefence.GestureDefence;
 
@@ -28,7 +27,7 @@ public class Enemy extends AnimatedSprite {
 	
 		private GestureDefence base;
 		
-		private final PhysicsHandler mPhysicsHandler;
+		private PhysicsHandler mPhysicsHandler;
 		private TimerHandler mTimeMoved;
 		
 		private float mSpeed = 0.0f; //Each enemy is given a random speed when they are created (need to move min and max values to global variables!
@@ -60,57 +59,100 @@ public class Enemy extends AnimatedSprite {
 		private float mMaxspeed = 0.0f; //Each enemy is given a top top speed, as wave's progress, don't want streaks of lightning as motion :)
 		
 		private boolean mWasAirborne = false; //Used to track some achievements
+		
+		private boolean mNewSprite = true; //Used to track if it was in the Enemy Pool or was just created!
 	
 	// ========================================
 	// Constructors
 	// ========================================
 	
-		public Enemy(final float pX, final float pY, final TiledTextureRegion pTiledTextureRegion, GestureDefence base, int type)
+		public Enemy(final TiledTextureRegion pTiledTextureRegion, GestureDefence base)
 		{
-			super(pX, pY, pTiledTextureRegion);
-			this.mPhysicsHandler = new PhysicsHandler(this);
-			this.registerUpdateHandler(this.mPhysicsHandler);
+			super(0.0f, 0.0f, pTiledTextureRegion);
 			this.base = base;
-			float speed = 0.0f;
-			
-			switch (type) {
-			case 1:
-				this.mCashWorth = 40;
-				this.mAttackDamage = 10.0f;
-				this.mHealth = 150.0f;
-				this.mMaxspeed = 80.0f;
-				
-				speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(),25.0f  + base.theWave.getWaveNumber());
-				if (speed < this.mMaxspeed)
-					this.mSpeed = speed;
-				else
-					this.mSpeed = this.mMaxspeed;
-				
-				this.mEnemyType = 1;
-				break;
-			case 2:
-				this.mCashWorth = 150;
-				this.mAttackDamage = 100.0f;
-				this.mHealth = 670.0f;
-				this.mMaxspeed = 90.0f;
-				
-				speed = MathUtils.random(18.0f + base.theWave.getWaveNumber(), 40.0f + base.theWave.getWaveNumber());
-				if (speed < this.mMaxspeed)
-					this.mSpeed = speed;
-				else
-					this.mSpeed = this.mMaxspeed;
-				
-				this.mEnemyType = 2;
-				break;
-				
-			default:
-				break;
-			}
 		}
 	
 	// ========================================
 	// Getter & Setter
 	// ========================================
+		
+		public void setX(final float pX) {
+			this.setX(pX);
+		}
+		
+		public void setY(final float pY) {
+			this.setY(pY);
+			this.mInitialY = pY;
+		}
+		
+		public void setXY(final float pX, final float pY) {
+			this.setPosition(pX, pY);
+			this.mInitialY = pY;
+		}
+		
+		public void setType1() {
+			float speed = 0.0f;
+			
+			this.mPhysicsHandler = new PhysicsHandler(this);
+			this.registerUpdateHandler(this.mPhysicsHandler);
+			
+			this.mCashWorth = 40;
+			this.mAttackDamage = 10.0f;
+			this.mHealth = 150.0f;
+			this.mMaxspeed = 80.0f;
+			
+			speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(),25.0f  + base.theWave.getWaveNumber());
+			if (speed < this.mMaxspeed)
+				this.mSpeed = speed;
+			else
+				this.mSpeed = this.mMaxspeed;
+			
+			this.mEnemyType = 1;
+		}
+		
+		public void setType2() {
+			float speed = 0.0f;
+			
+			this.mPhysicsHandler = new PhysicsHandler(this);
+			this.registerUpdateHandler(this.mPhysicsHandler);
+			
+			this.mCashWorth = 150;
+			this.mAttackDamage = 100.0f;
+			this.mHealth = 670.0f;
+			this.mMaxspeed = 90.0f;
+			
+			speed = MathUtils.random(18.0f + base.theWave.getWaveNumber(), 40.0f + base.theWave.getWaveNumber());
+			if (speed < this.mMaxspeed)
+				this.mSpeed = speed;
+			else
+				this.mSpeed = this.mMaxspeed;
+			
+			this.mEnemyType = 2;
+		}
+		
+		public void completeReset() {
+			this.mSpeed = 0.0f;
+			this.mGravity = 9.86f;
+			this.mMoveDelay = 0.0f;
+			this.mMoveX = 0.0f;
+			this.mMoveY = 0.0f;
+			this.mGroundHitSpeed = 0.0f;
+			//this.mInitialY = this.getY();
+			this.mTimerHandler = false;
+			this.mIsAirbourne = false;
+			this.lastSetAnimation = 0;
+			this.mHealth = 0.0f;
+			this.mSetDeathAnimation = false;
+			this.mCanAttackCastle = false;
+			this.mAttackDamage = 0.0f;
+			this.mAttackedTheCastle = false;
+			this.mCashWorth = 0;
+			//this.mEnemyType = 0;
+			this.mTripping = false;
+			this.mMaxspeed = 0.0f;
+			this.mWasAirborne = false;
+			this.mNewSprite = false;
+		}
 	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
@@ -162,15 +204,12 @@ public class Enemy extends AnimatedSprite {
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
 					
-					/* The following few lines remove the sprite's safely
-					 * Should not cause any errors with removal
-					 * recommended by andengine author */
-					final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
-					//Use set, NOT setEntity, if no parent, null pointer exception!
-					pPoolItem.setEntity(this.getParent());
-					base.sRemoveStuff.postPoolItem(pPoolItem);
-					
 					base.AchieveTracker.firstKill(); //Boom kill
+					
+					/*
+					 * New sprite removal code
+					 */
+					this.SendEnemyToEnemyPool(this.mEnemyType, this);
 				}
 			}
 			else
@@ -411,6 +450,19 @@ public class Enemy extends AnimatedSprite {
 		public void EnemyHurtFace(float amount)
 		{
 			this.mHealth -= amount;
+		}
+		
+		public void SendEnemyToEnemyPool(int type, Enemy pEnemy) {
+			if ( type == 1) {
+				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
+			}
+			if (type == 2) {
+				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
+			}
+		}
+		
+		public boolean isItNew() {
+			return this.mNewSprite;
 		}
 	
 	// ========================================

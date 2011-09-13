@@ -88,7 +88,7 @@ public class Notifications {
 			
 			theNotification = new ChangeableText(Xpos + 15 + smallOFLogo.getWidth(), Ypos + 4, mFont3, "", base.getCameraWidth());
 			
-			if (base.CustomHUD != null)
+			if (base.CustomHUD != null) // Obsolete ?
 			{
 				base.CustomHUD.attachChild(NotificationBackDrop);
 				base.CustomHUD.attachChild(theNotification);

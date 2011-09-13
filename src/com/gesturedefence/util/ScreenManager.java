@@ -171,10 +171,11 @@ public class ScreenManager {
 			GameScreen = new Scene(5); // 5 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana), 4 = Gesture Drawing layer)
 		
 			GameScreen.setBackground(base.autoParallaxBackground);
-			GameScreen.registerUpdateHandler(base.sRemoveStuff);
+			//GameScreen.registerUpdateHandler(base.sRemoveStuff);
 			
 			base.loadCastle(base.getCameraWidth() - (base.getCastleTexture().getWidth()), base.getCameraHeight() - 60 - base.getCastleTexture().getHeight());
 			base.CustomHUD.RefreshHUD();
+			base.CustomHUD.HideValues(false);
 			
 			base.sm.GameScreen.registerUpdateHandler(new IUpdateHandler() {
 				@Override
@@ -483,8 +484,7 @@ public class ScreenManager {
 					base.getEngine().setScene(QuitMenuCameFrom);
 					if (QuitMenuCameFrom == GameScreen)
 						if (base.CustomHUD.getHud() != null)
-							if (base.CustomHUD.getHud().isVisible() == false)
-								base.CustomHUD.getHud().setVisible(true);
+							base.CustomHUD.HideValues(true);
 					return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
 				}
 			};
