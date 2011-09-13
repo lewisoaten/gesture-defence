@@ -1,3 +1,4 @@
+17:40 13/09/2011 - Updated OpenFeint. Now has support for GameFeed functionality.
 13:50 12/09/2011 - Updated AndEngine. Code now needs re-working and updating in places!
 19:31 27/06/2011 - Added background support for In-App billing.
 03:26 26/06/2011 - Added proguard (obfuscate) support (proguard is probably required, not included due to size!).

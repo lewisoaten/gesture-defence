@@ -168,7 +168,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public int sEnemyCount = 0;
 	// ------
 	
-	public ScreenManager sm; //Instance of custom class screenmanager
+	public ScreenManager sm; //Instance of custom class screen manager
 	
 	/* New menu texture's
 	 * These currently placeholder's
@@ -796,9 +796,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			break;
 		}
 		
-		if (newEnemy.isItNew()) {
+		if (!newEnemy.hasParent())
 			GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
-		}
+		if (!newEnemy.isVisible())
+			newEnemy.setVisible(true);
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
 		GestureDefence.this.sm.GameScreen.setTouchAreaBindingEnabled(true); //Enable touch binding
 		GestureDefence.this.sEnemyCount++; //Increase the enemy count

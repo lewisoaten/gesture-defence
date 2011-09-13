@@ -59,8 +59,6 @@ public class Enemy extends AnimatedSprite {
 		private float mMaxspeed = 0.0f; //Each enemy is given a top top speed, as wave's progress, don't want streaks of lightning as motion :)
 		
 		private boolean mWasAirborne = false; //Used to track some achievements
-		
-		private boolean mNewSprite = true; //Used to track if it was in the Enemy Pool or was just created!
 	
 	// ========================================
 	// Constructors
@@ -151,7 +149,6 @@ public class Enemy extends AnimatedSprite {
 			this.mTripping = false;
 			this.mMaxspeed = 0.0f;
 			this.mWasAirborne = false;
-			this.mNewSprite = false;
 		}
 	
 	// ========================================
@@ -459,10 +456,6 @@ public class Enemy extends AnimatedSprite {
 			if (type == 2) {
 				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
 			}
-		}
-		
-		public boolean isItNew() {
-			return this.mNewSprite;
 		}
 	
 	// ========================================

@@ -59,8 +59,8 @@ public class EnemyPool extends GenericPool<Enemy> {
 		@Override
 		protected void onHandleRecycleItem(final Enemy pEnemy) {
 			pEnemy.setIgnoreUpdate(true);
-			pEnemy.setVisible(false);
 			pEnemy.completeReset(); // Initialise / reset
+			pEnemy.setVisible(false);
 		}
 		
 		/**
