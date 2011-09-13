@@ -48,7 +48,7 @@ public class Notifications {
 		public boolean mAlreadyShowing = false; // Used to work out if a message is already showing
 		private int lastShowedMessage = -1;
 		
-		private Scene theSceneShowing;
+//		private Scene theSceneShowing;
 		
 		private BitmapTextureAtlas OFLogo;
 		private TextureRegion OFLogoRegion;
@@ -88,22 +88,11 @@ public class Notifications {
 			
 			theNotification = new ChangeableText(Xpos + 15 + smallOFLogo.getWidth(), Ypos + 4, mFont3, "", base.getCameraWidth());
 			
-			if (base.CustomHUD != null) // Obsolete ?
-			{
-				base.CustomHUD.attachChild(NotificationBackDrop);
-				base.CustomHUD.attachChild(theNotification);
-				base.CustomHUD.attachChild(smallOFLogo);
-				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(false);
-				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(false);
-				base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(false);	
-			}
-			
 			TimerHandler NotificationChecks; //Register a new timer, check every second check for new messages!
 			base.getEngine().registerUpdateHandler(NotificationChecks = new TimerHandler(1, true, new ITimerCallback() {
 
 				@Override
 				public void onTimePassed(TimerHandler pTimerHandler) {
-					// TODO Auto-generated method stub
 					base.CustomNotifications.checkMessages();
 				}
 			}));
@@ -148,15 +137,15 @@ public class Notifications {
 			// Outputs the message
 			this.mAlreadyShowing = true; // Tell it that we are now showing a message
 			theNotification.setText(mMessages.get(indicator));
-			if (base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)) == null)
+			if (base.CustomHUD.getHud().getChildIndex(NotificationBackDrop) < 0)
 			{
-				base.CustomHUD.attachChild(NotificationBackDrop);
-				base.CustomHUD.attachChild(theNotification);
-				base.CustomHUD.attachChild(smallOFLogo);
+				base.CustomHUD.getHud().attachChild(NotificationBackDrop);
+				base.CustomHUD.getHud().attachChild(theNotification);
+				base.CustomHUD.getHud().attachChild(smallOFLogo);
 			}
-			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(true);
-			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(true);
-			base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(true);
+			base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(NotificationBackDrop)).setVisible(true);
+			base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(theNotification)).setVisible(true);
+			base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(smallOFLogo)).setVisible(true);
 
 			base.CustomHUD.getHud().registerUpdateHandler(notificationDuration = new TimerHandler(Duration,new ITimerCallback() {
 				@Override
@@ -167,9 +156,9 @@ public class Notifications {
 						mMessages.remove(lastShowedMessage);
 						lastShowedMessage = -1;
 					}
-					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(NotificationBackDrop)).setVisible(false);
-					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(theNotification)).setVisible(false);
-					base.CustomHUD.getChild(base.CustomHUD.getChildIndex(smallOFLogo)).setVisible(false);
+					base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(NotificationBackDrop)).setVisible(false);
+					base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(theNotification)).setVisible(false);
+					base.CustomHUD.getHud().getChild(base.CustomHUD.getHud().getChildIndex(smallOFLogo)).setVisible(false);
 					mAlreadyShowing = false; // Set to make sure it knows the current notification is over
 				}
 			}));
