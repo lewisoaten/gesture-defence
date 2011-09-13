@@ -87,6 +87,7 @@ import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.EnemyPool;
 import com.gesturedefence.util.FileOperations;
 import com.gesturedefence.util.HUD_revamp;
+import com.gesturedefence.util.ManaPool;
 import com.gesturedefence.util.Notifications;
 import com.gesturedefence.util.ScreenManager;
 import com.gesturedefence.util.Wave;
@@ -112,6 +113,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	//New enemy pool's
 	private static EnemyPool ENEMY_POOL1; //Enemy type 1
 	private static EnemyPool ENEMY_POOL2; //Enemy type 2
+	private static ManaPool MANA_POOL; // Mana Pool
 	
 	// ========================================
 	// Fields
@@ -341,6 +343,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			return ENEMY_POOL2;
 		else
 			return null;
+	}
+	
+	public ManaPool getManaPool() {
+		return this.MANA_POOL;
 	}
 	
 	// ========================================
@@ -592,6 +598,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				CustomHUD = new HUD_revamp(GestureDefence.this);
 				GestureDefence.this.ENEMY_POOL1 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion, GestureDefence.this);
 				GestureDefence.this.ENEMY_POOL2 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion2, GestureDefence.this);
+				GestureDefence.this.MANA_POOL = new ManaPool(GestureDefence.this.mManaTextureRegion, GestureDefence.this);
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));

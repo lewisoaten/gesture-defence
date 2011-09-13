@@ -185,8 +185,10 @@ public class Enemy extends AnimatedSprite {
 					int randomChance = MathUtils.random(1, 5); //20% Chance?
 					if (randomChance == 3)
 					{
-						Sprite mMana = new Mana(this.mX, this.mY, base.getManaTextureRegion(), base);
-						base.sm.GameScreen.getChild(3).attachChild(mMana);
+						Mana mMana = this.base.getManaPool().obtainPoolItem();
+						mMana.setup(this.mX, this.mY);
+						if (!mMana.hasParent())
+							base.sm.GameScreen.getChild(3).attachChild(mMana);
 						base.sm.GameScreen.registerTouchArea(mMana);
 					}
 				}

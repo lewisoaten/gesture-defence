@@ -23,7 +23,7 @@ public class Mana extends Sprite {
 	// ========================================
 	
 	private GestureDefence base;
-	private final PhysicsHandler mPhysicsHandler;
+	private PhysicsHandler mPhysicsHandler;
 	
 	private float mInitialY;
 	private float mGravity = 9.86f; //Gravity value for velocity
@@ -34,28 +34,41 @@ public class Mana extends Sprite {
 	// Constructors
 	// ========================================
 	
-		public Mana(final float pX, final float pY, final TextureRegion pTextureRegion, GestureDefence base)
+		public Mana(final TextureRegion pTextureRegion, GestureDefence base)
 		{
-			super(pX, pY, pTextureRegion);
-			this.mPhysicsHandler = new PhysicsHandler(this);
-			this.registerUpdateHandler(this.mPhysicsHandler);
+			super(0.0f, 0.0f, pTextureRegion);
 			this.base = base;
-			this.mInitialY = pY;
-			this.setPosition(this.mX, this.mY - 10);
-			this.mPhysicsHandler.setVelocityY(-300);
-			if (this.mX > (base.getCameraWidth() / 2) )
-			{
-				this.mPhysicsHandler.setVelocityX(-40.0f);
-			}
-			else if (this.mX <= (base.getCameraWidth() / 2) )
-			{
-				this.mPhysicsHandler.setVelocityX(40.0f);
-			}
 		}
 	
 	// ========================================
 	// Getter & Setter
 	// ========================================
+		
+		public void setup(final float pX, final float pY) {
+			this.setPosition(pX, pY);
+			this.mInitialY = pY;
+			
+			this.mPhysicsHandler = new PhysicsHandler(this);
+			this.registerUpdateHandler(this.mPhysicsHandler);
+			
+			this.setPosition(this.mX, this.mY - 10);
+			this.mPhysicsHandler.setVelocityY(-300);
+			
+			if (pX > (base.getCameraWidth() / 2) )
+			{
+				this.mPhysicsHandler.setVelocityX(-40.0f);
+			}
+			else if (pX <= (base.getCameraWidth() / 2) )
+			{
+				this.mPhysicsHandler.setVelocityX(40.0f);
+			}
+		}
+		
+		public void completeReset() {
+			this.mInitialY = 0.0f;
+			this.mGravity = 9.86f;
+			this.killIT = false;
+		}
 	
 	// ========================================
 	// Methods for/from SuperClass/Interfaces
@@ -67,27 +80,31 @@ public class Mana extends Sprite {
 			if (killIT)
 			{
 				base.sm.GameScreen.unregisterTouchArea(this);
+				base.getManaPool().recyclePoolItem(this);
 //				final EntityDetachRunnablePoolItem pPoolItem = base.sRemoveStuff.obtainPoolItem();
 //				pPoolItem.setEntity(this.getParent());
 //				base.sRemoveStuff.postPoolItem(pPoolItem);
 			}
-			
-//			if (this.mX < 5.0f) //If it's off the screen (left)
-//				this.mPhysicsHandler.setVelocityX(10.0f);
-//			
-//			if (this.mX > (base.getCameraWidth() - 20.0f) ) //If it's off the screen (right)
-//				this.mPhysicsHandler.setVelocityX(-10.0f);
-//			
-//			if (this.mX > 5.0f && this.mX < (base.getCameraWidth() - 5.0f) ) //If it's NOT off the screen
-//				this.mPhysicsHandler.setVelocityX(0.0f);
-			
-			if(this.mY < this.mInitialY)
-			{
-				this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
-			}
 			else
 			{
-				this.mPhysicsHandler.setVelocity(0.0f);
+			
+	//			if (this.mX < 5.0f) //If it's off the screen (left)
+	//				this.mPhysicsHandler.setVelocityX(10.0f);
+	//			
+	//			if (this.mX > (base.getCameraWidth() - 20.0f) ) //If it's off the screen (right)
+	//				this.mPhysicsHandler.setVelocityX(-10.0f);
+	//			
+	//			if (this.mX > 5.0f && this.mX < (base.getCameraWidth() - 5.0f) ) //If it's NOT off the screen
+	//				this.mPhysicsHandler.setVelocityX(0.0f);
+				
+				if(this.mY < this.mInitialY)
+				{
+					this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
+				}
+				else
+				{
+					this.mPhysicsHandler.setVelocity(0.0f);
+				}
 			}
 			super.onManagedUpdate(pSecondsElapsed);
 		}
