@@ -18,7 +18,6 @@ import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.MathUtils;
 
 import android.app.Activity;
-import android.widget.Toast;
 
 import com.gesturedefence.GestureDefence;
 import com.openfeint.api.resource.Leaderboard;
@@ -401,11 +400,7 @@ public class ScreenManager {
 			}
 
 			@Override public void onFailure(final String exceptionMessage) {
-				base.handler.post(new Runnable() {
-					public void run() {
-						Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") posting score.", Toast.LENGTH_SHORT).show();
-					}
-				});
+				base.CustomNotifications.addNotification("Error (" + exceptionMessage + ") posting score.");
 				base.setResult(Activity.RESULT_CANCELED);
 			}
 		});

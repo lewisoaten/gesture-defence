@@ -948,7 +948,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 								GestureDefence.this.mEarthquake = true;
 								GestureDefence.this.handler.post(new Runnable() {
 									public void run() {
-										Toast.makeText(GestureDefence.this.getApplicationContext(), "Earthquake", Toast.LENGTH_SHORT).show();
+										CustomNotifications.addNotification("Earthquake");
 									}
 								});	
 							}//end

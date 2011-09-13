@@ -6,7 +6,6 @@ package com.gesturedefence.util;
  */
 
 import android.app.Activity;
-import android.widget.Toast;
 
 import com.gesturedefence.GestureDefence;
 import com.openfeint.api.resource.Achievement;
@@ -91,7 +90,7 @@ public class Atracker {
 					@Override public void onFailure(final String exceptionMessage) {
 						base.handler.post(new Runnable() {
 							public void run() {
-								Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") unlocking achievement.", Toast.LENGTH_SHORT).show();
+								base.CustomNotifications.addNotification("Error (" + exceptionMessage + ") unlocking achievement.");
 							}
 						});
 						base.setResult(Activity.RESULT_CANCELED);
@@ -118,7 +117,7 @@ public class Atracker {
 					public void onFailure(final String exceptionMessage) {
 						base.handler.post(new Runnable() {
 							public void run() {
-								Toast.makeText(base.getApplicationContext(), "Error (" + exceptionMessage + ") updating achievement.", Toast.LENGTH_SHORT).show();
+								base.CustomNotifications.addNotification("Error (" + exceptionMessage + ") updating achievement.");
 							}
 						});
 					}

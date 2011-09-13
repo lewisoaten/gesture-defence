@@ -18,7 +18,6 @@ import java.io.OutputStreamWriter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.os.Environment;
-import android.widget.Toast;
 
 import com.gesturedefence.GestureDefence;
 
@@ -103,27 +102,15 @@ public class FileOperations {
 					buf.close();
 					output.close();
 					fos.close();
-	
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game Saved!", Toast.LENGTH_SHORT).show();
-						}
-					});	
+					
+					base.CustomNotifications.addNotification("Game Saved!");	
 	
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game Save failed. Failed to create file!", Toast.LENGTH_LONG).show();
-						}
-					});	
+					base.CustomNotifications.addNotification("Game Save failed. Failed to create file!");
 				} catch (IOException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game Save failed. Conversion errors", Toast.LENGTH_LONG).show();
-						}
-					});	
+					base.CustomNotifications.addNotification("Game Save failed. Conversion errors");
 				}
 			}
 		}
@@ -211,11 +198,7 @@ public class FileOperations {
 					base.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
 					base.mana = Integer.parseInt(manaLevel);
 					
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game Loaded!", Toast.LENGTH_SHORT).show();
-						}
-					});
+					base.CustomNotifications.addNotification("Game Loaded!");
 					
 					base.ButtonPress(3);			
 					
@@ -223,19 +206,11 @@ public class FileOperations {
 					
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
-						}
-					});
+					base.CustomNotifications.addNotification("Game load failed. No save file found!");
 					return false;
 				} catch (IOException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
-						}
-					});
+					base.CustomNotifications.addNotification("Game load failed. Error reading save file!");
 					return false;
 				}
 			} else return false;
@@ -277,19 +252,11 @@ public class FileOperations {
 					
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game load failed. No save file found!", Toast.LENGTH_LONG).show();
-						}
-					});
+					base.CustomNotifications.addNotification("Game load failed. No save file found!");
 					return 0;
 				} catch (IOException e) {
 					e.printStackTrace();
-					base.handler.post(new Runnable() {
-						public void run() {
-							Toast.makeText(base.getApplicationContext(), "Game load failed. Error reading save file!", Toast.LENGTH_LONG).show();
-						}
-					});
+					base.CustomNotifications.addNotification("Game load failed. Error reading save file!");
 					return 0;
 				}
 			} else return 0;
@@ -331,20 +298,12 @@ public class FileOperations {
 			} else if (Environment.MEDIA_SHARED.equals(state))
 			{
 				mExternalStorageAvailiable = mExternalStorageWritable = false;
-				base.handler.post(new Runnable() {
-					public void run() {
-						Toast.makeText(base.getApplicationContext(), "External Storage is currently in use, please disconnect from computer!", Toast.LENGTH_LONG).show();
-					}
-				});
+				base.CustomNotifications.addNotification("External Storage is currently in use, please disconnect from computer!");
 			} else
 			{
 				/* Something is wrong. May be one of many other states */
 				mExternalStorageAvailiable = mExternalStorageWritable = false;
-				base.handler.post(new Runnable() {
-					public void run() {
-						Toast.makeText(base.getApplicationContext(), "Something is wrong with the external storage. Please check it.", Toast.LENGTH_LONG).show();
-					}
-				});
+				base.CustomNotifications.addNotification("Something is wrong with the external storage. Please check it.");
 			}
 		}
 	
