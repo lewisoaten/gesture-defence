@@ -58,10 +58,6 @@ public class HUD_revamp extends HUD {
 				base.sCamera.setHUD(NewHud); //Finally attach the new HUD to the game
 				base.sCamera.getHUD().setVisible(true);
 			}
-			
-			this.updateCashValue();
-			this.updateCastleHealth();
-			this.updateManaValue();
 		}
 	
 	// ========================================

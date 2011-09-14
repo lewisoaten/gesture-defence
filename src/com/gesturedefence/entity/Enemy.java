@@ -448,15 +448,15 @@ public class Enemy extends AnimatedSprite {
 			case 1:
 				if (mPhysicsHandler != null)
 					unregisterUpdateHandler(mPhysicsHandler);
-				base.GetEnemyPool(type).recyclePoolItem(pEnemy);				
+				base.getEnemyPool(type).recyclePoolItem(pEnemy);				
 				break;
 			case 2:
 				if (mPhysicsHandler != null)
 					unregisterUpdateHandler(mPhysicsHandler);
-				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
+				base.getEnemyPool(type).recyclePoolItem(pEnemy);
 				break;
 			default:
-				base.GetEnemyPool(type).recyclePoolItem(pEnemy); // Redundant statement? Might work / might not
+				base.getEnemyPool(type).recyclePoolItem(pEnemy); // Redundant statement? Might work / might not
 				break;
 			}
 		}

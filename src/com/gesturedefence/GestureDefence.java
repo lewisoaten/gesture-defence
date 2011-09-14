@@ -192,7 +192,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public Sound hurt;
 	public Sound complete;
 	public Sound game_over;
-	public Sound ligtningStrike;
+	public Sound lightningStrike;
 	
 	/* Music */
 	public Music ambient;
@@ -337,21 +337,39 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		return CAMERA_WIDTH;
 	}
 	
+	public void setCameraWidth(int amount) {
+		CAMERA_WIDTH = amount;
+	}
+	
+	public void setCameraHeight(int amount) {
+		CAMERA_HEIGHT = amount;
+	}
+	
 	public int getCameraHeight() {
 		return CAMERA_HEIGHT;
 	}
 	
-	public EnemyPool GetEnemyPool(int type) {
-		if (type == 1)
-			return ENEMY_POOL1;
-		else if (type == 2)
-			return ENEMY_POOL2;
-		else
-			return null;
+	public void setManaPool(ManaPool thePool) {
+		MANA_POOL = thePool;
 	}
 	
 	public ManaPool getManaPool() {
-		return this.MANA_POOL;
+		return MANA_POOL;
+	}
+	
+	public void setEnemyPool(int type, EnemyPool thePool) {
+		if (type == 1)
+			ENEMY_POOL1 = thePool;
+		if (type == 2)
+			ENEMY_POOL2 = thePool;
+	}
+	
+	public EnemyPool getEnemyPool(int type) {
+		if (type == 1)
+			return ENEMY_POOL1;
+		if (type == 2)
+			return ENEMY_POOL2;
+		return ENEMY_POOL1; // Return deafult 1 if doesn't match (Prevent errors)
 	}
 	
 	public int getXpProgress() {
@@ -402,7 +420,15 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) { //Setup a few onCreate items
-		super.onCreate(savedInstanceState);		
+		super.onCreate(savedInstanceState);
+		
+		if (savedInstanceState != null) //Restore any instance saved state information!
+		{
+			GestureDefence.this.mCheckedRes = savedInstanceState.getBoolean("ResCheck");
+			GestureDefence.this.setCameraHeight(savedInstanceState.getInt("screenHeight"));
+			GestureDefence.this.setCameraWidth(savedInstanceState.getInt("screenWidth"));
+		}
+		
 		GestureDefence.this.mLibrary = GestureLibraries.fromRawResource(GestureDefence.this, R.raw.spells);
 		if (!mLibrary.load()) {
 			Toast.makeText(this, "Failed to load gesture library", Toast.LENGTH_SHORT).show();
@@ -430,17 +456,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		} else {
 			CustomNotifications.addNotification("BILLING is supported! WOO!");
 		}
-				
-	}
-
-	@Override
-	public Engine onLoadEngine() {
-		/* Do some quick checks to get the actual screen resolution 
-		 * This code runs twice, the call at the end for a new engine
-		 * causes this to run again,
-		 * second time through the correct display is setup */		
+		
 		/* Set-up the game engine and default camera location */
-		if (GestureDefence.this.mCheckedRes == false) //Check doesn't work??
+		if (!GestureDefence.this.mCheckedRes) //Check doesn't work??
 		{
 			DisplayMetrics dm = new DisplayMetrics();
 			getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -448,24 +466,28 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			int height = (int) (dm.heightPixels); //Gets the actual height of the screen
 			
 			/* Check the width, if it's one of the following change the camera width for it to fit the screen */
-				if (width == 320)
-					GestureDefence.this.CAMERA_WIDTH = 640;
-				if (width == 400)
-					GestureDefence.this.CAMERA_WIDTH = 800;
-				if (width == 432)
-					GestureDefence.this.CAMERA_WIDTH = 864;
-				if (width == 480)
-					GestureDefence.this.CAMERA_WIDTH = 720;
-				if (width == 800)
-					GestureDefence.this.CAMERA_WIDTH = 800;
-				if (width == 854)
-					GestureDefence.this.CAMERA_WIDTH = 854;
+			if (width == 320)
+				GestureDefence.this.setCameraWidth(640);
+			if (width == 400)
+				GestureDefence.this.setCameraWidth(800);
+			if (width == 432)
+				GestureDefence.this.setCameraWidth(864);
+			if (width == 480)
+				GestureDefence.this.setCameraWidth(720);
+			if (width == 800)
+				GestureDefence.this.setCameraWidth(800);
+			if (width == 854)
+				GestureDefence.this.setCameraWidth(854);
+			
+			if (height == 1280) //Test for tablet sized devices....Performance issues with AVD's prevent decent testing!
+				GestureDefence.this.setCameraHeight(1280); //Camera Height? ..Needs testing :)
 				
-				if (height == 1280) //Test for tablet sized devices....Performance issues with AVD's prevent decent testing!
-					GestureDefence.this.CAMERA_HEIGHT = 1280;
-				
-			GestureDefence.this.mCheckedRes = true;//working??
-		}
+			GestureDefence.this.mCheckedRes = true;
+		}		
+	}
+
+	@Override
+	public Engine onLoadEngine() {
 		GestureDefence.sCamera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
 		return new Engine(new EngineOptions(true, orientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), GestureDefence.sCamera).setNeedsSound(true).setNeedsMusic(true));
 	}
@@ -474,11 +496,16 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public void onLoadResources() {
 		/* Load Font settings*/
 		this.mFontTexture = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.mFontTexture2 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		
+		/* Setup Fonts */
 		FontFactory.setAssetBasePath("font/");
 		this.mFont = FontFactory.createFromAsset(this.mFontTexture, this, "Capture it.ttf", 48, true, Color.WHITE);
-		this.mEngine.getTextureManager().loadTexture(this.mFontTexture);
-		this.mEngine.getFontManager().loadFont(mFont);
+		this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
+		this.getEngine().getTextureManager().loadTextures(GestureDefence.this.mFontTexture, GestureDefence.this.mFontTexture2);
+		this.getEngine().getFontManager().loadFonts(mFont, mFont2);
+		
+		
 		
 		//Then create an instance of a Screenmanager
 		this.sm = new ScreenManager(this);
@@ -495,6 +522,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		//Show loading text on new load screen
 		final Text textCenter = new Text(100, 60, this.mFont, "LOADING..", HorizontalAlign.CENTER);
 		loadScene.attachChild(textCenter);
+		
+		CustomHUD = new HUD_revamp(GestureDefence.this);
+		GestureDefence.this.fileThingy = new FileOperations(GestureDefence.this); //Initialise first (for file operations..else crashes ensue!
 		
 		/* OpenFeint Setup */		
 		OpenFeintSettings settings = new OpenFeintSettings(OFgameName, OFgameKey, OFgameSecret, OFgameId);
@@ -526,13 +556,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.setParallaxLayerFront(BitmapTextureAtlasTextureRegionFactory.createFromAsset(mAutoParallaxBackgroundTexture, GestureDefence.this,"gfx/temp_clouds.png", 0, 650));
 				
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mAutoParallaxBackgroundTexture);
-				
-				/* Setup Smaller Texture Fonts */
-				GestureDefence.this.mFontTexture2 = new BitmapTextureAtlas(512, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-				FontFactory.setAssetBasePath("font/");
-				GestureDefence.this.mFont2 = FontFactory.createFromAsset(GestureDefence.this.mFontTexture2, GestureDefence.this, "Capture it.ttf", 24, true, Color.WHITE);
-				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mFontTexture2);
-				GestureDefence.this.getEngine().getFontManager().loadFont(mFont2);
 				
 				GestureDefence.this.autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 5);
 				GestureDefence.this.backgroundSprite1 = new Sprite(0, getCameraHeight() - getParallaxLayerBack().getHeight(), getParallaxLayerBack());
@@ -586,10 +609,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				{
 					public void run() {
 						GestureDefence.this.AchieveTracker = new Atracker(GestureDefence.this); //Offload it so it doesn't cause a slight jitter as it connects?
+						GestureDefence.this.AchieveTracker.loadAchievements();
 					}
 				});
-				
-				GestureDefence.this.fileThingy = new FileOperations(GestureDefence.this);
 				
 				SoundFactory.setAssetBasePath("sfx/");
 				try {
@@ -604,8 +626,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 					GestureDefence.this.complete.setVolume(2.0f);
 					GestureDefence.this.game_over = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "gameOver.ogg");
 					GestureDefence.this.game_over.setVolume(5.0f);
-					GestureDefence.this.ligtningStrike = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "lightning.ogg");
-					GestureDefence.this.ligtningStrike.setVolume(5.0f);
+					GestureDefence.this.lightningStrike = SoundFactory.createSoundFromAsset(GestureDefence.this.getEngine().getSoundManager(), GestureDefence.this, "lightning.ogg");
+					GestureDefence.this.lightningStrike.setVolume(5.0f);
 					
 					//Music
 					GestureDefence.this.ambient = MusicFactory.createMusicFromAsset(GestureDefence.this.getEngine().getMusicManager(), GestureDefence.this, "sfx/ambient.ogg");
@@ -614,10 +636,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 					//File not found
 				}
 				
-				CustomHUD = new HUD_revamp(GestureDefence.this);
-				GestureDefence.this.ENEMY_POOL1 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion, GestureDefence.this);
-				GestureDefence.this.ENEMY_POOL2 = new EnemyPool(GestureDefence.this.sEnemyTextureRegion2, GestureDefence.this);
-				GestureDefence.this.MANA_POOL = new ManaPool(GestureDefence.this.mManaTextureRegion, GestureDefence.this);
+				GestureDefence.this.setEnemyPool(1, new EnemyPool(GestureDefence.this.sEnemyTextureRegion, GestureDefence.this));
+				GestureDefence.this.setEnemyPool(2, new EnemyPool(GestureDefence.this.sEnemyTextureRegion2, GestureDefence.this));
+				GestureDefence.this.setManaPool(new ManaPool(GestureDefence.this.mManaTextureRegion, GestureDefence.this));
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -673,6 +694,18 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	}
 	
 	@Override
+	protected void onResume() {
+		soundsCheck(true); //Resume sound effects
+		super.onResume();
+	}
+	
+	@Override
+	protected void onPause() {
+		soundsCheck(false); //Pause sounds
+		super.onPause();
+	}
+	
+	@Override
 	protected void onStop() {
 		super.onStop();
 		ResponseHandler.unregister(mPurchaseObserver);
@@ -682,13 +715,25 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	@Override
 	protected void onDestroy() {
-		super.onDestroy();
 		mPurchaseDatabase.close();
 		mBillingService.unbind();
+		super.onDestroy();
 	}
 	
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
+		/**
+		 * Save any information that would be required for application back response!
+		 * Needed for when the app loses focus or force closed by android os
+		 */
+		boolean ResChecked = GestureDefence.this.mCheckedRes;
+		int screenWidth = GestureDefence.this.getCameraWidth();
+		int screenHeight = GestureDefence.this.getCameraHeight();
+		
+		outState.putBoolean("ResCheck", ResChecked);
+		outState.putInt("screenWidth", screenWidth);
+		outState.putInt("screenHeight", screenHeight);
+		
 		super.onSaveInstanceState(outState);
 	}
 	
@@ -805,20 +850,20 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		{
 		case 1:
 			//Enemy type 1 (standard)
-			newEnemy = GestureDefence.this.ENEMY_POOL1.obtainPoolItem();
+			newEnemy = GestureDefence.this.getEnemyPool(1).obtainPoolItem();
 			newEnemy.setXY(X, Y);
 			newEnemy.setType1();
 			break;
 		case 2:
 			//Enemy type 2
-			newEnemy = GestureDefence.this.ENEMY_POOL2.obtainPoolItem();
+			newEnemy = GestureDefence.this.getEnemyPool(2).obtainPoolItem();
 			newEnemy.setScale(1.5f);
 			newEnemy.setXY(X, Y);
 			newEnemy.setType2();
 			break;
 		default:
 			//If type specified is wrong, default to enemy type 1 texture
-			newEnemy = GestureDefence.this.ENEMY_POOL1.obtainPoolItem();
+			newEnemy = GestureDefence.this.getEnemyPool(1).obtainPoolItem();
 			newEnemy.setXY(X, Y);
 			newEnemy.setType1();
 			break;
@@ -916,7 +961,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 							if ((GestureDefence.this.mana - 1000) >= 0)
 							{
 								GestureDefence.this.mana -= 1000;
-								GestureDefence.this.ligtningStrike.play();
+								GestureDefence.this.lightningStrike.play();
 								
 								RectF tempThing = gesture.getBoundingBox(); //Get the bounding box of the gesture
 								float posX;
@@ -1058,6 +1103,60 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * Used to mute/unmute sound effects when the app goes into pause mode (phone call etc)
+	 * @param state - True = sounds on. False = sounds off!
+	 */
+	public void soundsCheck(boolean state) {
+		/*
+		 * List of sound effects to check
+		 * -- Sounds --
+		 * splat - Enemy death
+		 * complete - Level complete
+		 * attack - enemy attack castle
+		 * hurt - hurt enemy (trip etc)
+		 * game_over - game failed
+		 * lightningStrike - lightning strike sound
+		 * 
+		 * -- Music --
+		 * ambient - Backgroud music
+		 */
+		if (state)
+		{
+			if (GestureDefence.this.splat != null)
+				GestureDefence.this.splat.resume();
+			if (GestureDefence.this.complete != null)
+				GestureDefence.this.complete.resume();
+			if (GestureDefence.this.attack != null)
+				GestureDefence.this.attack.resume();
+			if (GestureDefence.this.hurt != null)
+				GestureDefence.this.hurt.resume();
+			if (GestureDefence.this.game_over != null)
+				GestureDefence.this.game_over.resume();
+			if (GestureDefence.this.lightningStrike != null)
+				GestureDefence.this.lightningStrike.resume();
+			if (GestureDefence.this.ambient != null)
+				GestureDefence.this.ambient.resume();
+		}
+		else
+		{
+			if (GestureDefence.this.splat != null)
+				GestureDefence.this.splat.pause();
+			if (GestureDefence.this.complete != null)
+				GestureDefence.this.complete.pause();
+			if (GestureDefence.this.attack != null)
+				GestureDefence.this.attack.pause();
+			if (GestureDefence.this.hurt != null)
+				GestureDefence.this.hurt.pause();
+			if (GestureDefence.this.game_over != null)
+				GestureDefence.this.game_over.pause();
+			if (GestureDefence.this.lightningStrike != null)
+				GestureDefence.this.lightningStrike.pause();
+			if (GestureDefence.this.ambient != null)
+				GestureDefence.this.ambient.pause();
+		}
 	}
 	
 	// ========================================

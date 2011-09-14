@@ -44,7 +44,6 @@ public class Atracker {
 			this.base = baseThing;
 			achieveProgress.add(0, false); // of1048612
 			achieveProgress.add(1, false); // of1048622
-			loadAchievements();
 		}
 	
 	// ========================================
@@ -88,7 +87,7 @@ public class Atracker {
 	// Methods for/from SuperClass/Interfaces
 	// ========================================
 		
-		private void loadAchievements() {
+		public void loadAchievements() {
 			if (base.isOnline())
 			{//Network available
 				
