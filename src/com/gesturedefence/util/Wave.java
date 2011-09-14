@@ -87,7 +87,7 @@ public class Wave {
 			SpawnedEnemies_Giant = 0;
 			
 			//Wave.sNumberEnemysToSpawn = (Wave.sWaveNumber * 10) + (Wave.sWaveNumber * 2); //Crap difficulty formula, might want work out a more awesome one
-			Wave.sNumberEnemysToSpawn = Wave.sWaveNumber * 10;
+			Wave.sNumberEnemysToSpawn = Wave.sWaveNumber * 100;
 			if (Wave.sWaveNumber >= 5)
 				Wave.sNumberEnemysToSpawn += (Wave.sWaveNumber - 4) * 2; // Add on additional giant enemies!
 			

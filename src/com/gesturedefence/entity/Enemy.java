@@ -9,7 +9,6 @@ import org.anddev.andengine.engine.handler.physics.PhysicsHandler;
 import org.anddev.andengine.engine.handler.timer.ITimerCallback;
 import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.entity.sprite.AnimatedSprite;
-import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.MathUtils;
@@ -21,52 +20,43 @@ public class Enemy extends AnimatedSprite {
 	// Constants
 	// ========================================
 	
+		private GestureDefence base;
+		private static float mGravity = 9.86f; //Static value for gravity  
+	
 	// ========================================
 	// Fields
 	// ========================================
-	
-		private GestureDefence base;
 		
 		private PhysicsHandler mPhysicsHandler;
-		private TimerHandler mTimeMoved;
+		private TimerHandler mTimeMoved; // Used to work out how long enemy was moved
 		
-		private float mSpeed = 0.0f; //Each enemy is given a random speed when they are created (need to move min and max values to global variables!
-		private float mGravity = 9.86f; //Gravity value for velocity, may move to global variable, 1 enemy = no problem, 2+ enemies = need global gravity
-		private float mMoveDelay = 0.0f; //Used to store how long enemy was dragged
-		private float mMoveX = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
-		private float mMoveY = 0.0f; //Used when the enemy is grabbed and moved, were did they move too
-		private float mGroundHitSpeed = 0.0f; //Used for damage calculations
-		private float mInitialY = this.getY(); //used to keep track of each enemy's ground level
+		private float baseY = 0.0f; //Stores the base ground level for each enemy entity
+		private float mSpeed = 0.0f; //Stores the speed of the enemy (X direction)
+		private float mMaxSpeed = 0.0f; //Stores the maximum speed of an enemy (as speed increases with difficulty, this prevents overly speedy entities)
+		private float mHealth = 0.0f; //Stores the health of the enemy
+		private float mAttackDamage = 0.0f; //Stores the attack damage of the enemy
+		private float mGroundHitSpeed = 0.0f; //Stores the speed the enemy hit the ground at
+		private float mMoveDelay = 0.0f; //Stores the time the enemy was moved for
+		private float mInitialMoveX = 0.0f; //Stores the initial X value from once the enemy came
+		private float mInitialMoveY = 0.0f; //Stores the initial Y value from once the enemy came
+		private float mArrivedAtCastle = 0.0f; //Stores the time of arrival at the castle
 		
-		private boolean mTimerHandler = false; //Used to track how long they were moved for
+		private int mCashWorth = 0; //Stores the cash worth of the enemy
+		private int mEnemyType = 0; // Stores the enemy type
+		private int currentAnimationCycle = 0; //Stores the current animation cycle being used (prevent's unnecessary over animation)
 		
-		private boolean mIsAirbourne = false; //Is the enemy airborne? (were they dragged up!)
-		private int lastSetAnimation = 0; //0 = none, 1 = running, 2 = falling, 3 = death, 4 = attacking, 5 = tripping
-		
-		private float mHealth = 0.0f; //The amount of health the enemy has to start with
-		private boolean mSetDeathAnimation = false; //Used to get death animation working properly
-		
-		private boolean mCanAttackCastle = false; //Used for attacking castle
-		private float mAttackDamage = 0.0f; //The amount of damage each attack does to the castle
-		private boolean mAttackedTheCastle = false; //Used to prevent enemy's doing loads of damage (caused by the period the frame is shown)
-		
-		protected int mCashWorth = 0; //The amount each kill of this enemy is worth
-		
-		private int mEnemyType = 0;
-		
-		private boolean mTripping = false; //Is the enemy tripping
-		
-		private float mMaxspeed = 0.0f; //Each enemy is given a top top speed, as wave's progress, don't want streaks of lightning as motion :)
-		
-		private boolean mWasAirborne = false; //Used to track some achievements
+		private boolean mTimerHandler = false; // Used to track how long an enemy was moved
+		private boolean mCanAttackCastle = false; // Used to work out if the enemy is allowed to attack the castle
+		private boolean mIsAirborne = false; //Tells us if the enemy is airborne or not
+		private boolean mTripTracker = false; //Tracks the triping of enemy's for the achievement!
+		private boolean mTripping = false; //Stores whether the enemy is being tripped or not
 	
 	// ========================================
 	// Constructors
 	// ========================================
-	
-		public Enemy(final TiledTextureRegion pTiledTextureRegion, GestureDefence base)
-		{
-			super(0.0f, 0.0f, pTiledTextureRegion);
+		
+		public Enemy(final TiledTextureRegion pTiledTectureRegion, GestureDefence base) {
+			super(0.0f, 0.0f, pTiledTectureRegion);
 			this.base = base;
 		}
 	
@@ -74,22 +64,13 @@ public class Enemy extends AnimatedSprite {
 	// Getter & Setter
 	// ========================================
 		
-		public void setX(final float pX) {
-			this.setX(pX);
-		}
-		
-		public void setY(final float pY) {
-			this.setY(pY);
-			this.mInitialY = pY;
-		}
-		
 		public void setXY(final float pX, final float pY) {
-			this.setPosition(pX, pY);
-			this.mInitialY = pY;
+			this.setPosition(pX,pY);
+			this.baseY = pY;
 		}
 		
 		public void setType1() {
-			float speed = 0.0f;
+			float speed = 0.0f; //Used to calculate speed increase based on level
 			
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
@@ -97,19 +78,20 @@ public class Enemy extends AnimatedSprite {
 			this.mCashWorth = 40;
 			this.mAttackDamage = 10.0f;
 			this.mHealth = 150.0f;
-			this.mMaxspeed = 80.0f;
+			this.mMaxSpeed = 80.0f;
 			
-			speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(),25.0f  + base.theWave.getWaveNumber());
-			if (speed < this.mMaxspeed)
+			//Calculate speed
+			speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(), 25.0f + base.theWave.getWaveNumber());
+			if (speed < this.mMaxSpeed)
 				this.mSpeed = speed;
 			else
-				this.mSpeed = this.mMaxspeed;
+				this.mSpeed = this.mMaxSpeed;
 			
 			this.mEnemyType = 1;
 		}
 		
 		public void setType2() {
-			float speed = 0.0f;
+			float speed = 0.0f; //Used to calculate speed increase based on level
 			
 			this.mPhysicsHandler = new PhysicsHandler(this);
 			this.registerUpdateHandler(this.mPhysicsHandler);
@@ -117,38 +99,33 @@ public class Enemy extends AnimatedSprite {
 			this.mCashWorth = 150;
 			this.mAttackDamage = 100.0f;
 			this.mHealth = 670.0f;
-			this.mMaxspeed = 90.0f;
+			this.mMaxSpeed = 90.0f;
 			
+			//Calculate speed
 			speed = MathUtils.random(18.0f + base.theWave.getWaveNumber(), 40.0f + base.theWave.getWaveNumber());
-			if (speed < this.mMaxspeed)
+			if (speed < this.mMaxSpeed)
 				this.mSpeed = speed;
 			else
-				this.mSpeed = this.mMaxspeed;
+				this.mSpeed = this.mMaxSpeed;
 			
 			this.mEnemyType = 2;
 		}
 		
-		public void completeReset() {
+		public void completeReset() { //Called when an enemy is being re-used from the pool
+			this.baseY = 0.0f;
 			this.mSpeed = 0.0f;
-			this.mGravity = 9.86f;
-			this.mMoveDelay = 0.0f;
-			this.mMoveX = 0.0f;
-			this.mMoveY = 0.0f;
-			this.mGroundHitSpeed = 0.0f;
-			//this.mInitialY = this.getY();
-			this.mTimerHandler = false;
-			this.mIsAirbourne = false;
-			this.lastSetAnimation = 0;
+			this.mMaxSpeed = 0.0f;
 			this.mHealth = 0.0f;
-			this.mSetDeathAnimation = false;
-			this.mCanAttackCastle = false;
 			this.mAttackDamage = 0.0f;
-			this.mAttackedTheCastle = false;
 			this.mCashWorth = 0;
-			//this.mEnemyType = 0;
+			this.mMoveDelay = 0.0f;
+			this.mInitialMoveX = 0.0f;
+			this.mInitialMoveY = 0.0f;
+			this.mCanAttackCastle = false;
+			this.mIsAirborne = false;
+			this.mTripTracker = false;
+			this.currentAnimationCycle = 0;
 			this.mTripping = false;
-			this.mMaxspeed = 0.0f;
-			this.mWasAirborne = false;
 		}
 	
 	// ========================================
@@ -156,269 +133,153 @@ public class Enemy extends AnimatedSprite {
 	// ========================================
 		
 		@Override
-		public void onManagedUpdate(final float pSecondsElapsed)
-		{
-			if (base.mEarthQuaking)
-			{
-				this.mTripping = true;
-			}
-			if ((base.mLightningBolt == true)
-					&& (this.mX <= base.mLightningBoltX + 100)
-					&& (this.mX >= base.mLightningBoltX - 100)
-					&& (this.mY >= base.mLightningBoltY - 70)
-					&& (this.mY <= base.mLightningBoltY + 20))
-			{
-				this.EnemyHurtFace(1000.0f); //Lol's, gave it a random name, no idea why! Probably because I could
-			}
-			if (isEnemyDead())
-			{
-				if (this.mSetDeathAnimation == false)
-				{
-					this.stopAnimation();
-					this.mPhysicsHandler.setEnabled(false);
-					this.base.sm.GameScreen.unregisterTouchArea(this);
-					this.animate(new long[] {200, 200, 200}, new int[] {6, 7, 8}, 0);
-					this.lastSetAnimation = 3;
-					this.mSetDeathAnimation = true;
-					base.splat.play();
+		public void onManagedUpdate(final float pSecondsElapsed) {
+			//Run's every frame!!
+			if (!checkEnemyDeath()) {
+				//Enemy is alive do this
+				if (!mTripping) { //Enemy is not tripping
 					
-					int randomChance = MathUtils.random(1, 5); //20% Chance?
-					if (randomChance == 3)
-					{
-						Mana mMana = this.base.getManaPool().obtainPoolItem();
-						mMana.setup(this.mX, this.mY);
-						if (!mMana.hasParent())
-							base.sm.GameScreen.getChild(3).attachChild(mMana);
-						base.sm.GameScreen.registerTouchArea(mMana);
+					if (mPhysicsHandler.isEnabled()) {
+						if (mIsAirborne) {
+							// Airborne Section
+							base.sm.GameScreen.unregisterTouchArea(this);
+							setAnimationCycle(2);
+							
+							if (mX > (base.getCameraWidth() - (getWidth() / 2))) { //Prevents enemy leaving screen to the right
+								mPhysicsHandler.setVelocityX(0.0f);
+								mX = (base.getCameraWidth() - (getWidth() / 2));
+							}
+							
+							if (mX < (0.0f - (getWidth() / 2))) { //Prevents enemy leaving screen to the left
+								mPhysicsHandler.setVelocityX(0.0f);
+								setPosition(0.0f - (getWidth() / 2), mY);
+							}
+							
+							if (mY > baseY) { //Enemy just hit floor!
+								mIsAirborne = false;
+								mGroundHitSpeed = mPhysicsHandler.getVelocityY();
+								enemyFallDamage();
+							} else if (mY < baseY) { //Enemy is still falling!
+								if (mPhysicsHandler.getVelocityY() < -1000)
+									mPhysicsHandler.setVelocityY(-1000);
+								mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
+							}
+							// End of Airborne Section
+						} else {
+							// Non Airborne Section
+							if (mPhysicsHandler.getVelocityX() == 0.0f) {
+								if (mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && mY >= baseY) {
+									mPhysicsHandler.setVelocityX(mSpeed);
+									setAnimationCycle(1);
+								}
+							}
+							if (mPhysicsHandler.getVelocityX() > 0.0f){
+								if (mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6)) {
+									mPhysicsHandler.setVelocityX(0.0f);
+									setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), mY);
+									//Attack castle
+									enemyAtCastle(pSecondsElapsed);
+								}
+							}
+							if (mY < mInitialMoveY){
+								if ((mY - mPhysicsHandler.getVelocityY() - mGravity) < baseY)
+									mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
+								else {
+									mPhysicsHandler.setVelocityY(0.0f);
+									setPosition(mX, baseY);
+								}
+							} else if (mY + getHeight() / 2 >= baseY)
+								mPhysicsHandler.setVelocityY(0.0f);
+							// End of Non airborne Section
+						}
+					}
+				} else { //Enemy is tripping
+					if (!isAnimationRunning()) {
+						mTripping = false;
+						mPhysicsHandler.setEnabled(true);
+						setAnimationCycle(1);
+						base.sm.GameScreen.registerTouchArea(this);
+						if (!mTripTracker)
+							base.AchieveTracker.Trips();
+						else
+							mTripTracker = false;
 					}
 				}
-				else if (this.isAnimationRunning() == false)
-				{
-					/* Add value of enemy to current cash amount
-					 * Then update it
-					 * Also increase global kill count */
-					base.sMoney += this.mCashWorth;
-					base.mMoneyEarned += this.mCashWorth;
+			} else {
+				//Enemy is dead, get rid of it
+				killEnemy();
+				
+				if (!isAnimationRunning()) {
+					base.sMoney += mCashWorth;
+					base.mMoneyEarned += mCashWorth;
 					base.CustomHUD.updateCashValue();
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
 					
-					base.AchieveTracker.firstKill(); //Boom kill
+					base.AchieveTracker.firstKill();
 					
-					/*
-					 * New sprite removal code
-					 */
-					this.SendEnemyToEnemyPool(this.mEnemyType, this);
+					sendEnemyToPool(mEnemyType, this);
 				}
 			}
-			else
-			{
-				if (this.mTripping)
-				{
-					if (this.lastSetAnimation != 5)
-					{
-						this.mPhysicsHandler.setEnabled(false);
-						this.animate(new long[] {150,150,250, 150, 150}, new int[] {9, 10, 11, 10, 9}, 0);
-						this.lastSetAnimation = 5;
-						base.hurt.play();
-						base.sm.GameScreen.unregisterTouchArea(this);
-						this.EnemyHurtFace(50.0f);
-					}
-					else if (this.isAnimationRunning() == false)
-					{
-						this.mTripping = false;
-						this.mPhysicsHandler.setEnabled(true);
-						base.sm.GameScreen.registerTouchArea(this);
-						if (this.mWasAirborne == false)
-						{
-							base.AchieveTracker.Trips(); //Trip that bitch!							
-						}
-						else
-							this.mWasAirborne = false;
-					}
-				}
-				
-				if (this.mCanAttackCastle)
-				{
-					if (this.getCurrentTileIndex() == 4 && this.mAttackedTheCastle == false)
-					{
-						//Do ONE set of damage when the frame is in the right place (animation frame)
-						Castle.damageCastle(this.mAttackDamage);
-						base.CustomHUD.updateCastleHealth();
-						this.mAttackedTheCastle = true;
-						base.attack.play();
-					}
-					if (this.getCurrentTileIndex() != 4 && this.mAttackedTheCastle)
-					{
-						//Prevents the damage being done in overzealous amounts (ONCE per the frame)  
-						this.mAttackedTheCastle = false;
-					}
-				}
-				
-				if(this.mPhysicsHandler.isEnabled())
-				{
-					if (this.mIsAirbourne == true)
-					{
-						//Airborne code
-						base.sm.GameScreen.unregisterTouchArea(this);
-						if (lastSetAnimation != 2)
-						{
-							this.animate(new long[] {200,0}, 6, 7, true);
-							lastSetAnimation = 2;
-						}					
-						
-						if(this.mX > (base.getCameraWidth() - (this.getWidth() / 2) ))
-						{
-							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.mX = (base.getCameraWidth() - (this.getWidth() / 2) );
-						}
-						if(this.mX < (0.0f - (this.getWidth() / 2) ))
-						{
-							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition(0.0f - (this.getWidth() / 2), this.mY);
-						}
-						
-						if(this.mY > this.mInitialY)
-						{
-							this.mIsAirbourne = false;
-							base.sm.GameScreen.registerTouchArea(this);
-							//Hurt them
-							mGroundHitSpeed = this.mPhysicsHandler.getVelocityY();
-							EnemySubtractHealth();
-							
-							this.mPhysicsHandler.setVelocityY(0.0f);
-							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition(this.mX, this.mInitialY);
-							this.mTripping = true;
-							this.mPhysicsHandler.setEnabled(false);
-						}
-						else if(this.mY < this.mInitialY)
-						{
-							if (this.mY < 0.0f) //Check if it's above the screen (screen top is 0.0)
-								if (this.mPhysicsHandler.getVelocityY() < -1000) //Negative because Y is backwards
-									this.mPhysicsHandler.setVelocityY(-1000); //If it's going to fast slow it down!
-							this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
-						}
-						//End of airborne section
-					}
-					else
-					{
-						// Non airborne code!
-						if(this.mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && this.mY >= this.mInitialY)
-						{
-							this.mPhysicsHandler.setVelocityX(mSpeed);
-							if(lastSetAnimation != 1)
-							{
-								this.animate(new long[] {200, 200, 200}, 0, 2, true);
-								lastSetAnimation = 1;
-							}
-						} 
-						else if(this.mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6))
-						{
-							this.mPhysicsHandler.setVelocityX(0.0f);
-							this.setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), this.mY);
-							if(lastSetAnimation != 4)
-							{
-								/* Attacking Castle animation */
-								this.animate(new long[] {200,200,200}, 3, 5, true);
-								lastSetAnimation = 4;
-								this.mCanAttackCastle = true;
-							}
-						}
-						
-						if(this.mY < this.mInitialY)
-						{
-							if((this.mY - this.mPhysicsHandler.getVelocityY() - mGravity) < this.mInitialY)
-							{
-								this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
-							}
-							else
-							{
-								this.mPhysicsHandler.setVelocityY(0.0f);
-								this.setPosition(this.mX, this.mInitialY);
-							}
-						}
-						else if(this.mY + this.getHeight() / 2 >= this.mInitialY)
-						{
-							this.mPhysicsHandler.setVelocityY(0.0f);
-						}
-					}
-					//End of non-airborne section
-				}
-			}				
 			super.onManagedUpdate(pSecondsElapsed);
 		}
 		
 		@Override
-		public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY)
-		{
-			this.mPhysicsHandler.setEnabled(false);
-			switch(pSceneTouchEvent.getAction())
-			{
+		public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY){
+			
+			this.mPhysicsHandler.setEnabled(false); // Turn off the physics (we're dragging this bad boy!)
+			
+			switch(pSceneTouchEvent.getAction()) {
 				case TouchEvent.ACTION_DOWN:
-					if (mTimerHandler == false)
-					{
-						this.mCanAttackCastle = false;
+					if (!mTimerHandler) {
+						mCanAttackCastle = false;
 						mMoveDelay = 0.0f;
-						mMoveX = this.mX;
-						mMoveY = this.mY;
-						mTimeMoved = new TimerHandler(1 / 4.0f, true, new ITimerCallback()
-						{
+						mInitialMoveX = mX;
+						mInitialMoveY = mY;
+						mTimeMoved = new TimerHandler( 1 / 4.0f, true, new ITimerCallback() {
 							@Override
-							public void onTimePassed(final TimerHandler pTimerHandler)
-							{
-								//Do nothing, simply a timer for use in Action_UP
+							public void onTimePassed(final TimerHandler pTimerHandler) {
+								// Do nothing. Simply a timer used in ACTION_UP
 							}
 						});
-						this.registerUpdateHandler(this.mTimeMoved);
+						registerUpdateHandler(this.mTimeMoved);
 						mTimerHandler = true;
 					}
 					break;
 				case TouchEvent.ACTION_MOVE:
-					if(pSceneTouchEvent.getY() - this.getHeight() / 2 < mInitialY)
-					{
-						//Only move the enemy if the finger is moved further than a XX (allows for touch enemy, tripping)
-						if (pSceneTouchEvent.getY() - this.mInitialY < -5.0f)
-						{
-							this.setPosition(pSceneTouchEvent.getX() - this.getWidth() / 2, pSceneTouchEvent.getY() - this.getHeight() / 2);
-							if (this.mIsAirbourne == false)
-								this.mIsAirbourne = true;
+					if (pSceneTouchEvent.getY() - getHeight() / 2 < baseY) {
+						// Only move the enemy if the finger is moved further than XX (allows for enemy's to be tripped)
+						if (pSceneTouchEvent.getY() - baseY < -5.0f) {
+							setPosition(pSceneTouchEvent.getX() - getWidth() / 2, pSceneTouchEvent.getY() - getHeight() / 2);
+							mIsAirborne = true; //Set airborne true
 						}
-					}
-					else
-					{
-						this.mIsAirbourne = false;
-					}
+					} else 
+						mIsAirborne = false;
 					break;
 				case TouchEvent.ACTION_UP:
-					if(mTimerHandler == true)
-					{
-						mMoveDelay = this.mTimeMoved.getTimerSecondsElapsed();
-						this.unregisterUpdateHandler(this.mTimeMoved);
+					if (mTimerHandler) {
+						// Get the time dragged, then remove the timer
+						mMoveDelay = mTimeMoved.getTimerSecondsElapsed();
+						unregisterUpdateHandler(mTimeMoved);
 						
-						float mDiffX = this.mX - mMoveX;
-						float mDiffY = this.mY - mMoveY;
-						mDiffX = mDiffX / mMoveDelay;
-						mDiffY = mDiffY / mMoveDelay;
+						float DiffX = mX - mInitialMoveX;
+						float DiffY = mY - mInitialMoveY;
+						DiffX = DiffX / mMoveDelay;
+						DiffY = DiffY / mMoveDelay;
 						
-						float mVelocityX = mMoveDelay * (mDiffX / 2);
-						float mVelocityY = mMoveDelay * (mDiffY / 2);
+						float mVelocityX = mMoveDelay * (DiffX / 2);
+						float mVelocityY = mMoveDelay * (DiffY / 2);
 						
-						//Check to see how far it moved, if it didn't move far at all, make them trip up instead
-						if ( (mDiffY > -10.0f) )
-						{
-							mVelocityX = 0;
-							mVelocityY = 0;
-							this.mTripping = true;
+						//Check to see how far it moved, if it didn't go far make it trip instead
+						if ( ( DiffY > -10.0f) ) {
+							mVelocityX = 0.0f;
+							mVelocityY = 0.0f;
+							tripEnemy();
+						} else {
+							mPhysicsHandler.setEnabled(true);
+							mPhysicsHandler.setVelocity(mVelocityX, mVelocityY);
+							mTripTracker = true; //Let it know that this enemy is falling
 						}
-						else
-						{
-							this.mPhysicsHandler.setEnabled(true);						
-							this.mPhysicsHandler.setVelocityX(mVelocityX);
-							this.mPhysicsHandler.setVelocityY(mVelocityY);
-							this.mWasAirborne = true;
-						}
-						
 						mTimerHandler = false;
 					}
 					break;
@@ -430,33 +291,123 @@ public class Enemy extends AnimatedSprite {
 	// Methods
 	// ========================================
 		
-		public boolean isEnemyDead()
-		{
-			if(this.mHealth <= 0.0f)
-			{
+		public void hurtEnemy(float amount) {
+			this.mHealth -= amount;
+		}
+		
+		public void enemyFallDamage() {
+			this.mHealth -= (mGroundHitSpeed / 3);
+			mGroundHitSpeed = 0.0f;
+			mPhysicsHandler.setVelocityX(0.0f);
+			mPhysicsHandler.setVelocityY(0.0f);
+			setPosition(mX, baseY);
+			tripEnemy();
+		}
+		
+		/**
+		 * Checks to see if the enemy is dead.
+		 * @return True if the enemy is dead.
+		 */
+		public boolean checkEnemyDeath() {
+			if (mHealth <= 0.0f)
 				return true;
-			}
 			else
 				return false;
 		}
 		
-		public void EnemySubtractHealth()
-		{
-			this.mHealth -= (mGroundHitSpeed / 3);
-			mGroundHitSpeed = 0;
+		public void lightningStrike() {
+			// Lightning Strike
 		}
 		
-		public void EnemyHurtFace(float amount)
-		{
-			this.mHealth -= amount;
+		public void earthQuake() {
+			// Earthquake
 		}
 		
-		public void SendEnemyToEnemyPool(int type, Enemy pEnemy) {
-			if ( type == 1) {
-				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
+		public void killEnemy() {
+			// The enemy has been killed
+			if (currentAnimationCycle != 3) {
+				mPhysicsHandler.setEnabled(false);
+				base.sm.GameScreen.unregisterTouchArea(this);
+				setAnimationCycle(3);
+				base.splat.play();
+				
+				//Add Mana/Drop code here!
 			}
-			if (type == 2) {
+		}
+		
+		public void setAnimationCycle(int ID) {
+			// Set's the required animation cycle going
+			switch (ID) {
+			case 1: //Running
+				if (currentAnimationCycle != 1) {
+					animate(new long[] {200, 200, 200}, 0, 2, true);
+					currentAnimationCycle = 1;
+				}
+				break;
+			case 2: //Falling?
+				if (currentAnimationCycle != 2) {
+					animate(new long[] {200, 0}, 6, 7, true);
+					currentAnimationCycle = 2;
+				}
+				break;
+			case 3: // Death
+				if (currentAnimationCycle != 3) {
+					animate(new long[] {200, 200, 200}, new int[] {6, 7, 8}, 0);
+					currentAnimationCycle = 3;
+				}
+				break;
+			case 4: //attacking
+				if (currentAnimationCycle != 4) {
+					animate(new long[] {200, 200, 200}, 3, 5, true);
+					currentAnimationCycle = 4;
+				}
+				break;
+			case 5: //tripping
+				if (currentAnimationCycle != 5) {
+					animate(new long[] {150, 150, 250, 150, 150}, new int[] {9, 10, 11, 10, 9}, 0);
+					currentAnimationCycle = 5;
+				}
+				
+				break;
+			}
+		}
+		
+		public void tripEnemy() {
+			// Trip the enemy ?
+			if (!mTripping) {
+				mPhysicsHandler.setEnabled(false);
+				mTripping = true;
+				setAnimationCycle(5);
+				base.hurt.play();
+				base.sm.GameScreen.unregisterTouchArea(this);
+				hurtEnemy(50.0f);
+			}
+		}
+		
+		public void enemyAtCastle(float secondselapsed) {
+			// Enemy has arrived at the castle
+			if (!mCanAttackCastle) {
+				mCanAttackCastle = true;
+				setAnimationCycle(4);
+				mArrivedAtCastle = secondselapsed;
+			}
+		}
+		
+		public void sendEnemyToPool(int type, Enemy pEnemy) {
+			switch (type) {
+			case 1:
+				if (mPhysicsHandler != null)
+					unregisterUpdateHandler(mPhysicsHandler);
+				base.GetEnemyPool(type).recyclePoolItem(pEnemy);				
+				break;
+			case 2:
+				if (mPhysicsHandler != null)
+					unregisterUpdateHandler(mPhysicsHandler);
 				base.GetEnemyPool(type).recyclePoolItem(pEnemy);
+				break;
+			default:
+				base.GetEnemyPool(type).recyclePoolItem(pEnemy); // Redundant statement? Might work / might not
+				break;
 			}
 		}
 	

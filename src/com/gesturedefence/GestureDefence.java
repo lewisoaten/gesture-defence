@@ -197,7 +197,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	/* Music */
 	public Music ambient;
 	
-	public int mOnScreenEnemyLimit = 80; //A hard cap on the total number of enemies at any one time
+	public int mOnScreenEnemyLimit = 400; //A hard cap on the total number of enemies at any one time
 	public int mOnScreenEnemies = 0; //Used with above in the Wave class
 	
 	protected GestureLibrary mLibrary;
