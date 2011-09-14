@@ -230,6 +230,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	public HUD_revamp CustomHUD;
 	
 	private boolean hasGameLoaded = false;
+	private int xpProgression = 0; // Tracks XP progression!
 	
 	//Test STUFF
 	private static final String TAG = "GestureDefence";
@@ -351,6 +352,18 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public ManaPool getManaPool() {
 		return this.MANA_POOL;
+	}
+	
+	public int getXpProgress() {
+		return this.xpProgression;
+	}
+	
+	public void increaseXpProgress (int amount) {
+		this.xpProgression += amount;
+	}
+	
+	public void setXpProgress (int amount) { //used to set up xp progress (file load etc)
+		this.xpProgression = amount;
 	}
 	
 	// ========================================

@@ -83,6 +83,7 @@ public class FileOperations {
 					String maxHealth = "#6:" + base.sCastle.getMaxHealth();
 					String previousKills = "#7:" + base.sPreviousKillCount;
 					String manaLevel = "#8:" + base.mana;
+					String xpProgress = "#9:" + base.getXpProgress();
 	
 					buf.write(killCount);
 					buf.newLine();
@@ -99,6 +100,8 @@ public class FileOperations {
 					buf.write(previousKills);
 					buf.newLine();
 					buf.write(manaLevel);
+					buf.newLine();
+					buf.write(xpProgress);
 					buf.newLine();
 	
 					buf.close();
@@ -132,6 +135,7 @@ public class FileOperations {
 				String maxHealth = "3000";
 				String prevKills = "0";
 				String manaLevel = "0";
+				String xpProgress = "0";
 				
 				try {
 					File file = new File(dir, FILENAME);
@@ -183,6 +187,10 @@ public class FileOperations {
 							int pos = string.indexOf(":");
 							manaLevel = string.substring(pos + 1);
 						}
+						if (string.contains("#9:")) {
+							int pos = string.indexOf(":");
+							xpProgress = string.substring(pos + 1);
+						}
 						
 						string = buffreader.readLine();
 					}
@@ -199,6 +207,7 @@ public class FileOperations {
 					base.sCastle.setCurrentHealth(Integer.parseInt(currentHealth));
 					base.sCastle.setMaxHealth(Integer.parseInt(maxHealth));
 					base.mana = Integer.parseInt(manaLevel);
+					base.setXpProgress(Integer.parseInt(xpProgress));
 					
 					base.CustomNotifications.addNotification("Game Loaded!");
 					

@@ -46,6 +46,7 @@ public class Enemy extends AnimatedSprite {
 		private int mCashWorth = 0; //Stores the cash worth of the enemy
 		private int mEnemyType = 0; // Stores the enemy type
 		private int currentAnimationCycle = 0; //Stores the current animation cycle being used (prevent's unnecessary over animation)
+		private int mXpWorth = 0; // Stores the xp value of the enemy
 		
 		private boolean mTimerHandler = false; // Used to track how long an enemy was moved
 		private boolean mCanAttackCastle = false; // Used to work out if the enemy is allowed to attack the castle
@@ -83,6 +84,7 @@ public class Enemy extends AnimatedSprite {
 			this.mAttackDamage = 10.0f;
 			this.mHealth = 150.0f;
 			this.mMaxSpeed = 80.0f;
+			this.mXpWorth = 100;
 			
 			//Calculate speed
 			speed = MathUtils.random(6.5f + base.theWave.getWaveNumber(), 25.0f + base.theWave.getWaveNumber());
@@ -104,6 +106,7 @@ public class Enemy extends AnimatedSprite {
 			this.mAttackDamage = 100.0f;
 			this.mHealth = 670.0f;
 			this.mMaxSpeed = 90.0f;
+			this.mXpWorth = 250;
 			
 			//Calculate speed
 			speed = MathUtils.random(18.0f + base.theWave.getWaveNumber(), 40.0f + base.theWave.getWaveNumber());
@@ -130,6 +133,7 @@ public class Enemy extends AnimatedSprite {
 			this.mTripTracker = false;
 			this.currentAnimationCycle = 0;
 			this.mTripping = false;
+			this.mXpWorth = 0;
 			this.unregisterUpdateHandler(mPhysicsHandler);
 		}
 	
@@ -370,6 +374,9 @@ public class Enemy extends AnimatedSprite {
 						base.sm.GameScreen.getChild(3).attachChild(mMana);
 					base.sm.GameScreen.registerTouchArea(mMana);
 				}
+				
+				//Xp progress code!
+				base.increaseXpProgress(mXpWorth);
 			}
 		}
 		
