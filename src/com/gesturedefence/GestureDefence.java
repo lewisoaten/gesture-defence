@@ -197,7 +197,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	/* Music */
 	public Music ambient;
 	
-	public int mOnScreenEnemyLimit = 400; //A hard cap on the total number of enemies at any one time
+	public int mOnScreenEnemyLimit = 100; //A hard cap on the total number of enemies at any one time
 	public int mOnScreenEnemies = 0; //Used with above in the Wave class
 	
 	protected GestureLibrary mLibrary;
@@ -939,7 +939,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 									lightningPosY = tempThing.top; //End of the sprite animation!
 								}
 								
-								lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.clone());
+								lightning = new AnimatedSprite(posX, posY, GestureDefence.this.mLightningTextureRegion.deepCopy());
 								lightning.animate(new long[] {50, 50, 50, 50, 50, 50}, new int[] {0, 1, 2, 3, 4, 5}, 0);
 								GestureDefence.this.sm.GameScreen.attachChild(lightning);
 								GestureDefence.this.mLightningBoltX = lightningPosX;

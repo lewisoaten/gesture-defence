@@ -50,7 +50,7 @@ public class EnemyPool extends GenericPool<Enemy> {
 		 */
 		@Override
 		protected Enemy onAllocatePoolItem() {
-			return new Enemy(mTextureRegion.clone(), base); // Clone(), because it's an animated sprite!
+			return new Enemy(this.mTextureRegion.deepCopy(), base); // Clone(), because it's an animated sprite! (Broken Clone?)
 		}
 		
 		/**

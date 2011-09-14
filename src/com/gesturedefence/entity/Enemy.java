@@ -5,6 +5,8 @@ package com.gesturedefence.entity;
  * @since 12:05:40 - 15 Jun 2011
  */
 
+import java.util.Random;
+
 import org.anddev.andengine.engine.handler.physics.PhysicsHandler;
 import org.anddev.andengine.engine.handler.timer.ITimerCallback;
 import org.anddev.andengine.engine.handler.timer.TimerHandler;
@@ -50,6 +52,8 @@ public class Enemy extends AnimatedSprite {
 		private boolean mIsAirborne = false; //Tells us if the enemy is airborne or not
 		private boolean mTripTracker = false; //Tracks the triping of enemy's for the achievement!
 		private boolean mTripping = false; //Stores whether the enemy is being tripped or not
+		
+		private Random manaChance = new Random(6); //Used in random mana spawn chance
 	
 	// ========================================
 	// Constructors
@@ -126,6 +130,7 @@ public class Enemy extends AnimatedSprite {
 			this.mTripTracker = false;
 			this.currentAnimationCycle = 0;
 			this.mTripping = false;
+			this.unregisterUpdateHandler(mPhysicsHandler);
 		}
 	
 	// ========================================
@@ -135,7 +140,31 @@ public class Enemy extends AnimatedSprite {
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed) {
 			//Run's every frame!!
-			if (!checkEnemyDeath()) {
+			if (base.mLightningBolt //Lightning Strike Check
+					&& (mX <= base.mLightningBoltX + 100)
+					&& (mX >= base.mLightningBoltX - 100)
+					&& (mY >= base.mLightningBoltY - 70)
+					&& (mY <= base.mLightningBoltY + 20)) {
+				hurtEnemy(1000.0f);
+			}
+			
+			if (base.mEarthQuaking) //EarthQuake Check
+				tripEnemy();
+			
+			if (mCanAttackCastle) { //The enemy is at the castle!
+				if (pSecondsElapsed >= (mArrivedAtCastle + 1.0f) ) { //At least one second (I think) has elapsed!
+					mArrivedAtCastle = pSecondsElapsed; //Reset for next time loop
+					Castle.damageCastle(mAttackDamage);
+					base.CustomHUD.updateCastleHealth();
+					setAnimationCycle(4);
+					base.attack.play();
+					
+				if (mY + getHeight() / 2 >= baseY) {
+					setPosition(mX, baseY);
+					mPhysicsHandler.setVelocityY(0.0f);
+				}
+			}
+			} else if (!checkEnemyDeath()) { //Else to prevent running all this code when the enemy is already at the castle?
 				//Enemy is alive do this
 				if (!mTripping) { //Enemy is not tripping
 					
@@ -167,29 +196,31 @@ public class Enemy extends AnimatedSprite {
 							// End of Airborne Section
 						} else {
 							// Non Airborne Section
-							if (mPhysicsHandler.getVelocityX() == 0.0f) {
-								if (mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && mY >= baseY) {
-									mPhysicsHandler.setVelocityX(mSpeed);
-									setAnimationCycle(1);
+							if (!mCanAttackCastle) {
+								if (mPhysicsHandler.getVelocityX() == 0.0f) {
+									if (mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && mY >= baseY) {
+										mPhysicsHandler.setVelocityX(mSpeed);
+										setAnimationCycle(1);
+									}
 								}
-							}
-							if (mPhysicsHandler.getVelocityX() > 0.0f){
-								if (mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6)) {
-									mPhysicsHandler.setVelocityX(0.0f);
-									setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), mY);
-									//Attack castle
-									enemyAtCastle(pSecondsElapsed);
-								}
-							}
-							if (mY < mInitialMoveY){
-								if ((mY - mPhysicsHandler.getVelocityY() - mGravity) < baseY)
-									mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
-								else {
+								//if (mPhysicsHandler.getVelocityX() > 0.0f){
+									if (mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6)) {
+										mPhysicsHandler.setVelocityX(0.0f);
+										setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), mY);
+										//Attack castle
+										enemyAtCastle(pSecondsElapsed);
+									}
+								//}
+								if (mY < mInitialMoveY){
+									if ((mY - mPhysicsHandler.getVelocityY() - mGravity) < baseY)
+										mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
+									else {
+										mPhysicsHandler.setVelocityY(0.0f);
+										setPosition(mX, baseY);
+									}
+								} else if (mY + getHeight() / 2 >= baseY)
 									mPhysicsHandler.setVelocityY(0.0f);
-									setPosition(mX, baseY);
-								}
-							} else if (mY + getHeight() / 2 >= baseY)
-								mPhysicsHandler.setVelocityY(0.0f);
+							}
 							// End of Non airborne Section
 						}
 					}
@@ -331,7 +362,14 @@ public class Enemy extends AnimatedSprite {
 				setAnimationCycle(3);
 				base.splat.play();
 				
-				//Add Mana/Drop code here!
+				//Mana Drop code
+				if (manaChance.nextInt(7) == 6) { //Has to be one less?
+					Mana mMana = base.getManaPool().obtainPoolItem();
+					mMana.setup(mX, mY);
+					if (!mMana.hasParent())
+						base.sm.GameScreen.getChild(3).attachChild(mMana);
+					base.sm.GameScreen.registerTouchArea(mMana);
+				}
 			}
 		}
 		
@@ -372,6 +410,10 @@ public class Enemy extends AnimatedSprite {
 			}
 		}
 		
+		public int getAnimationCycle() {
+			return currentAnimationCycle;
+		}
+		
 		public void tripEnemy() {
 			// Trip the enemy ?
 			if (!mTripping) {
@@ -390,6 +432,7 @@ public class Enemy extends AnimatedSprite {
 				mCanAttackCastle = true;
 				setAnimationCycle(4);
 				mArrivedAtCastle = secondselapsed;
+				
 			}
 		}
 		

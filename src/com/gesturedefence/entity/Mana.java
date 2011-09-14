@@ -103,7 +103,7 @@ public class Mana extends Sprite {
 				}
 				else
 				{
-					this.mPhysicsHandler.setVelocity(0.0f);
+					this.mPhysicsHandler.setVelocity(0.0f, 0.0f);
 				}
 			}
 			super.onManagedUpdate(pSecondsElapsed);
