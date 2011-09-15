@@ -50,7 +50,7 @@ public class ManaPool extends GenericPool<Mana> {
 		 */
 		@Override
 		protected Mana onAllocatePoolItem() {
-			return new Mana(mTextureRegion, base); // Clone(), because it's an animated sprite!
+			return new Mana(mTextureRegion.deepCopy(), base); // Clone(), because it's an animated sprite!
 		}
 		
 		/**

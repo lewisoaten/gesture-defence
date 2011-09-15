@@ -85,6 +85,8 @@ import com.gesturedefence.billing.consts.PurchaseState;
 import com.gesturedefence.billing.consts.ResponseCode;
 import com.gesturedefence.entity.Castle;
 import com.gesturedefence.entity.Enemy;
+import com.gesturedefence.entity.GoldPool;
+import com.gesturedefence.entity.goldTextPool;
 import com.gesturedefence.util.Atracker;
 import com.gesturedefence.util.EnemyPool;
 import com.gesturedefence.util.FileOperations;
@@ -116,6 +118,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	private static EnemyPool ENEMY_POOL1; //Enemy type 1
 	private static EnemyPool ENEMY_POOL2; //Enemy type 2
 	private static ManaPool MANA_POOL; // Mana Pool
+	private static GoldPool GOLD_POOL; // Gold Pool
+	private static goldTextPool GOLD_TEXT_POOL; //Gold Text Pool
 	
 	// ========================================
 	// Fields
@@ -154,6 +158,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private BitmapTextureAtlas mManaTexture;
 	private TextureRegion mManaTextureRegion;
+	private BitmapTextureAtlas mGoldTexture;
+	private TextureRegion mGoldTextureRegion;
 	
 	public Wave theWave; // Instance of custom Wave class
 	
@@ -165,11 +171,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	/* These need to be reset/loaded for each game */
 	public int sPreviousWaveNum = 0;
-	public int sKillCount = 0;
+	public int sKillCount = 0; //Total number of enemies killed (overall)
 	public int sPreviousKillCount = 0;
 	public int sMoney = 0; //This is the amount of cash so far
 	public int mMoneyEarned = 0; //Total cash earned throughout the game
-	public int sEnemyCount = 0;
+	public int sEnemyCount = 0; //Enemies killed this wave
 	// ------
 	
 	public ScreenManager sm; //Instance of custom class screen manager
@@ -333,6 +339,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		return mManaTextureRegion;
 	}
 	
+	public TextureRegion getGoldTextureRegion() {
+		return mGoldTextureRegion;
+	}
+	
 	public int getCameraWidth() {
 		return CAMERA_WIDTH;
 	}
@@ -355,6 +365,22 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public ManaPool getManaPool() {
 		return MANA_POOL;
+	}
+	
+	public void setGoldPool(GoldPool thePool) {
+		GOLD_POOL = thePool;
+	}
+	
+	public GoldPool getGoldPool() {
+		return GOLD_POOL;
+	}
+	
+	public void setGoldTextPool(goldTextPool thePool) {
+		GOLD_TEXT_POOL = thePool;
+	}
+	
+	public goldTextPool getGoldTextPool() {
+		return GOLD_TEXT_POOL;
 	}
 	
 	public void setEnemyPool(int type, EnemyPool thePool) {
@@ -382,6 +408,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public void setXpProgress (int amount) { //used to set up xp progress (file load etc)
 		this.xpProgression = amount;
+	}
+	
+	public void increaseGold (int amount) { //Increases the total gold earned!
+		this.sMoney += amount;
 	}
 	
 	// ========================================
@@ -505,8 +535,6 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.getEngine().getTextureManager().loadTextures(GestureDefence.this.mFontTexture, GestureDefence.this.mFontTexture2);
 		this.getEngine().getFontManager().loadFonts(mFont, mFont2);
 		
-		
-		
 		//Then create an instance of a Screenmanager
 		this.sm = new ScreenManager(this);
 	}
@@ -582,6 +610,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.mManaTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mManaTexture, GestureDefence.this, "gfx/mana.png", 0, 0);
 				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mManaTexture);
 				
+				/* Gold Texture */
+				GestureDefence.this.mGoldTexture = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+				GestureDefence.this.mGoldTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mGoldTexture, GestureDefence.this, "gfx/gold.png", 0, 0);
+				GestureDefence.this.getEngine().getTextureManager().loadTexture(GestureDefence.this.mGoldTexture);
+				
 				/* Load castle sprite */
 				GestureDefence.this.mCastleTexture = new BitmapTextureAtlas(128,128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 				GestureDefence.this.mCastleTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mCastleTexture, GestureDefence.this, "gfx/crappy_castle.png", 0, 0);
@@ -639,6 +672,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.setEnemyPool(1, new EnemyPool(GestureDefence.this.sEnemyTextureRegion, GestureDefence.this));
 				GestureDefence.this.setEnemyPool(2, new EnemyPool(GestureDefence.this.sEnemyTextureRegion2, GestureDefence.this));
 				GestureDefence.this.setManaPool(new ManaPool(GestureDefence.this.mManaTextureRegion, GestureDefence.this));
+				GestureDefence.this.setGoldPool(new GoldPool(GestureDefence.this.mGoldTextureRegion, GestureDefence.this));
+				GestureDefence.this.setGoldTextPool(new goldTextPool(GestureDefence.this));
 				GestureDefence.this.sm.loadMainMenu();
 			}
 		}));
@@ -857,9 +892,9 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		case 2:
 			//Enemy type 2
 			newEnemy = GestureDefence.this.getEnemyPool(2).obtainPoolItem();
-			newEnemy.setScale(1.5f);
 			newEnemy.setXY(X, Y);
 			newEnemy.setType2();
+			newEnemy.setScale(1.5f);
 			break;
 		default:
 			//If type specified is wrong, default to enemy type 1 texture

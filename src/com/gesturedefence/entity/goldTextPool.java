@@ -1,17 +1,15 @@
-package com.gesturedefence.util;
+package com.gesturedefence.entity;
 
-import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.util.pool.GenericPool;
 
 import com.gesturedefence.GestureDefence;
-import com.gesturedefence.entity.Enemy;
 
 /**
  * @author Michael Watts
- * @since 22:42:28 - 12 Sep 2011
+ * @since 00:44:45 - 15 Sep 2011
  */
 
-public class EnemyPool extends GenericPool<Enemy> {
+public class goldTextPool extends GenericPool<goldText> {
 	
 	// ========================================
 	// Constants
@@ -20,20 +18,14 @@ public class EnemyPool extends GenericPool<Enemy> {
 	// ========================================
 	// Fields
 	// ========================================
-	
-		private TiledTextureRegion mTextureRegion;
+		
 		private GestureDefence base;
 	
 	// ========================================
 	// Constructors
 	// ========================================
 		
-		public EnemyPool(TiledTextureRegion pTextureRegion, GestureDefence base) {
-			if (pTextureRegion == null) {
-				// Need to be able to create a sprite so the pool needs to have a TextureRegion
-				throw new IllegalArgumentException("The Texture region must not be NULL");
-			}
-			mTextureRegion = pTextureRegion;
+		public goldTextPool(GestureDefence base) {
 			this.base = base;
 		}
 	
@@ -49,18 +41,17 @@ public class EnemyPool extends GenericPool<Enemy> {
 		 * Called when an enemy is required but there isn't one in the pool
 		 */
 		@Override
-		protected Enemy onAllocatePoolItem() {
-			return new Enemy(this.mTextureRegion.deepCopy(), base); // Clone(), because it's an animated sprite! (Broken Clone?)
+		protected goldText onAllocatePoolItem() {
+			return new goldText(base); // Clone(), because it's an animated sprite!
 		}
 		
 		/**
 		 * Called when an enemy is sent to the pool
 		 */
 		@Override
-		protected void onHandleRecycleItem(final Enemy pEnemy) {
-			pEnemy.setIgnoreUpdate(true);
-			pEnemy.completeReset(); // Initialise / reset
-			pEnemy.setVisible(false);
+		protected void onHandleRecycleItem(final goldText pGoldText) {
+			pGoldText.setIgnoreUpdate(true);
+			pGoldText.setVisible(false);
 		}
 		
 		/**
@@ -68,10 +59,8 @@ public class EnemyPool extends GenericPool<Enemy> {
 		 * i.e. Set position, size etc
 		 */
 		@Override
-		protected void onHandleObtainItem(final Enemy pEnemy) {
-			pEnemy.setScale(1.0f);
-			pEnemy.setSize(64.0f, 64.0f);
-			pEnemy.reset();
+		protected void onHandleObtainItem(final goldText pGoldText) {
+			pGoldText.reset();
 		}
 	
 	// ========================================

@@ -41,7 +41,6 @@ public class Enemy extends AnimatedSprite {
 		private float mMoveDelay = 0.0f; //Stores the time the enemy was moved for
 		private float mInitialMoveX = 0.0f; //Stores the initial X value from once the enemy came
 		private float mInitialMoveY = 0.0f; //Stores the initial Y value from once the enemy came
-		private float mArrivedAtCastle = 0.0f; //Stores the time of arrival at the castle
 		
 		private int mCashWorth = 0; //Stores the cash worth of the enemy
 		private int mEnemyType = 0; // Stores the enemy type
@@ -53,6 +52,7 @@ public class Enemy extends AnimatedSprite {
 		private boolean mIsAirborne = false; //Tells us if the enemy is airborne or not
 		private boolean mTripTracker = false; //Tracks the triping of enemy's for the achievement!
 		private boolean mTripping = false; //Stores whether the enemy is being tripped or not
+		private boolean mAttackCastle = false; //Stores the current attack timer state (True = there is a timer, False = no timer)
 		
 		private Random manaChance = new Random(6); //Used in random mana spawn chance
 	
@@ -134,6 +134,7 @@ public class Enemy extends AnimatedSprite {
 			this.currentAnimationCycle = 0;
 			this.mTripping = false;
 			this.mXpWorth = 0;
+			this.mAttackCastle = false;
 			this.unregisterUpdateHandler(mPhysicsHandler);
 		}
 	
@@ -156,14 +157,22 @@ public class Enemy extends AnimatedSprite {
 				tripEnemy();
 			
 			if (mCanAttackCastle) { //The enemy is at the castle!
-				if (pSecondsElapsed >= (mArrivedAtCastle + 1.0f) ) { //At least one second (I think) has elapsed!
-					mArrivedAtCastle = pSecondsElapsed; //Reset for next time loop
-					Castle.damageCastle(mAttackDamage);
-					base.CustomHUD.updateCastleHealth();
-					setAnimationCycle(4);
-					base.attack.play();
+				setAnimationCycle(4); //Precautionary call!
+				if (!mAttackCastle){
+					mAttackCastle = true;
+					this.registerUpdateHandler(new TimerHandler(1.0f, new ITimerCallback() {
+						@Override
+						public void onTimePassed(final TimerHandler pTimerHandler) { //Timer, once every second hit the castle!
+							mAttackCastle = false;
+							Castle.damageCastle(mAttackDamage);
+							base.CustomHUD.updateCastleHealth();
+							base.attack.play();
+							unregisterUpdateHandler(pTimerHandler);
+						}
+				}));
 					
-				if (mY + getHeight() / 2 >= baseY) {
+					
+				if (mY + getHeight() / 2 >= baseY) { //Check position!
 					setPosition(mX, baseY);
 					mPhysicsHandler.setVelocityY(0.0f);
 				}
@@ -245,8 +254,8 @@ public class Enemy extends AnimatedSprite {
 				killEnemy();
 				
 				if (!isAnimationRunning()) {
-					base.sMoney += mCashWorth;
-					base.mMoneyEarned += mCashWorth;
+					//base.sMoney += mCashWorth;
+					//base.mMoneyEarned += mCashWorth;
 					base.CustomHUD.updateCashValue();
 					base.sKillCount++;
 					base.mOnScreenEnemies--;
@@ -375,6 +384,15 @@ public class Enemy extends AnimatedSprite {
 					base.sm.GameScreen.registerTouchArea(mMana);
 				}
 				
+				//Gold Drop code
+				if ((base.sKillCount - base.sPreviousKillCount) >= (base.theWave.getNumberEnemysToSpawn() - 3) ) { //Last 3 enemies
+					Gold mGold = base.getGoldPool().obtainPoolItem();
+					mGold.setup(mX, mY, 111);
+					if (!mGold.hasParent())
+						base.sm.GameScreen.getChild(3).attachChild(mGold);
+					base.sm.GameScreen.registerTouchArea(mGold);
+				}
+				
 				//Xp progress code!
 				base.increaseXpProgress(mXpWorth);
 			}
@@ -438,8 +456,6 @@ public class Enemy extends AnimatedSprite {
 			if (!mCanAttackCastle) {
 				mCanAttackCastle = true;
 				setAnimationCycle(4);
-				mArrivedAtCastle = secondselapsed;
-				
 			}
 		}
 		
