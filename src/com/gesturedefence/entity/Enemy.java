@@ -55,6 +55,7 @@ public class Enemy extends AnimatedSprite {
 		private boolean mAttackCastle = false; //Stores the current attack timer state (True = there is a timer, False = no timer)
 		
 		private Random manaChance = new Random(6); //Used in random mana spawn chance
+		private boolean mGrabbedEnemy = false; //Tells us wether the enemy is currently held
 	
 	// ========================================
 	// Constructors
@@ -135,6 +136,7 @@ public class Enemy extends AnimatedSprite {
 			this.mTripping = false;
 			this.mXpWorth = 0;
 			this.mAttackCastle = false;
+			this.mGrabbedEnemy = false;
 			this.unregisterUpdateHandler(mPhysicsHandler);
 		}
 	
@@ -145,124 +147,126 @@ public class Enemy extends AnimatedSprite {
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed) {
 			//Run's every frame!!
-			if (base.mLightningBolt //Lightning Strike Check
-					&& (mX <= base.mLightningBoltX + 100)
-					&& (mX >= base.mLightningBoltX - 100)
-					&& (mY >= base.mLightningBoltY - 70)
-					&& (mY <= base.mLightningBoltY + 20)) {
-				hurtEnemy(1000.0f);
-			}
-			
-			if (base.mEarthQuaking) //EarthQuake Check
-				tripEnemy();
-			
-			if (mCanAttackCastle) { //The enemy is at the castle!
-				setAnimationCycle(4); //Precautionary call!
-				if (!mAttackCastle){
-					mAttackCastle = true;
-					this.registerUpdateHandler(new TimerHandler(1.0f, new ITimerCallback() {
-						@Override
-						public void onTimePassed(final TimerHandler pTimerHandler) { //Timer, once every second hit the castle!
-							mAttackCastle = false;
-							Castle.damageCastle(mAttackDamage);
-							base.CustomHUD.updateCastleHealth();
-							base.attack.play();
-							unregisterUpdateHandler(pTimerHandler);
-						}
-				}));
-					
-					
-				if (mY + getHeight() / 2 >= baseY) { //Check position!
-					setPosition(mX, baseY);
-					mPhysicsHandler.setVelocityY(0.0f);
+			if (!mGrabbedEnemy) {
+				if (base.mLightningBolt //Lightning Strike Check
+						&& (mX <= base.mLightningBoltX + 100)
+						&& (mX >= base.mLightningBoltX - 100)
+						&& (mY >= base.mLightningBoltY - 70)
+						&& (mY <= base.mLightningBoltY + 20)) {
+					hurtEnemy(1000.0f);
 				}
-			}
-			} else if (!checkEnemyDeath()) { //Else to prevent running all this code when the enemy is already at the castle?
-				//Enemy is alive do this
-				if (!mTripping) { //Enemy is not tripping
-					
-					if (mPhysicsHandler.isEnabled()) {
-						if (mIsAirborne) {
-							// Airborne Section
-							base.sm.GameScreen.unregisterTouchArea(this);
-							setAnimationCycle(2);
-							
-							if (mX > (base.getCameraWidth() - (getWidth() / 2))) { //Prevents enemy leaving screen to the right
-								mPhysicsHandler.setVelocityX(0.0f);
-								mX = (base.getCameraWidth() - (getWidth() / 2));
-							}
-							
-							if (mX < (0.0f - (getWidth() / 2))) { //Prevents enemy leaving screen to the left
-								mPhysicsHandler.setVelocityX(0.0f);
-								setPosition(0.0f - (getWidth() / 2), mY);
-							}
-							
-							if (mY > baseY) { //Enemy just hit floor!
-								mIsAirborne = false;
-								mGroundHitSpeed = mPhysicsHandler.getVelocityY();
-								enemyFallDamage();
-							} else if (mY < baseY) { //Enemy is still falling!
-								if (mPhysicsHandler.getVelocityY() < -1000)
-									mPhysicsHandler.setVelocityY(-1000);
-								mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
-							}
-							// End of Airborne Section
-						} else {
-							// Non Airborne Section
-							if (!mCanAttackCastle) {
-								if (mPhysicsHandler.getVelocityX() == 0.0f) {
-									if (mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && mY >= baseY) {
-										mPhysicsHandler.setVelocityX(mSpeed);
-										setAnimationCycle(1);
-									}
-								}
-								//if (mPhysicsHandler.getVelocityX() > 0.0f){
-									if (mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6)) {
-										mPhysicsHandler.setVelocityX(0.0f);
-										setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), mY);
-										//Attack castle
-										enemyAtCastle(pSecondsElapsed);
-									}
-								//}
-								if (mY < mInitialMoveY){
-									if ((mY - mPhysicsHandler.getVelocityY() - mGravity) < baseY)
-										mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
-									else {
-										mPhysicsHandler.setVelocityY(0.0f);
-										setPosition(mX, baseY);
-									}
-								} else if (mY + getHeight() / 2 >= baseY)
-									mPhysicsHandler.setVelocityY(0.0f);
-							}
-							// End of Non airborne Section
-						}
-					}
-				} else { //Enemy is tripping
-					if (!isAnimationRunning()) {
-						mTripping = false;
-						mPhysicsHandler.setEnabled(true);
-						setAnimationCycle(1);
-						base.sm.GameScreen.registerTouchArea(this);
-						if (!mTripTracker)
-							base.AchieveTracker.Trips();
-						else
-							mTripTracker = false;
-					}
-				}
-			} else {
-				//Enemy is dead, get rid of it
-				killEnemy();
 				
-				if (!isAnimationRunning()) {
-					//base.sMoney += mCashWorth;
-					//base.mMoneyEarned += mCashWorth;
-					base.CustomHUD.updateCashValue();
-					base.sKillCount++;
-					base.mOnScreenEnemies--;
+				if (base.mEarthQuaking) //EarthQuake Check
+					tripEnemy();
+				
+				if (mCanAttackCastle) { //The enemy is at the castle!
+					setAnimationCycle(4); //Precautionary call!
+					if (!mAttackCastle){
+						mAttackCastle = true;
+						this.registerUpdateHandler(new TimerHandler(1.0f, new ITimerCallback() {
+							@Override
+							public void onTimePassed(final TimerHandler pTimerHandler) { //Timer, once every second hit the castle!
+								mAttackCastle = false;
+								Castle.damageCastle(mAttackDamage);
+								base.CustomHUD.updateCastleHealth();
+								base.attack.play();
+								unregisterUpdateHandler(pTimerHandler);
+							}
+					}));
+						
+						
+					if (mY + getHeight() / 2 >= baseY) { //Check position!
+						setPosition(mX, baseY);
+						mPhysicsHandler.setVelocityY(0.0f);
+					}
+				}
+				} else if (!checkEnemyDeath()) { //Else to prevent running all this code when the enemy is already at the castle?
+					//Enemy is alive do this
+					if (!mTripping) { //Enemy is not tripping
+						
+						if (mPhysicsHandler.isEnabled()) {
+							if (mIsAirborne) {
+								// Airborne Section
+								base.sm.GameScreen.unregisterTouchArea(this);
+								setAnimationCycle(2);
+								
+								if (mX > (base.getCameraWidth() - (getWidth() / 2))) { //Prevents enemy leaving screen to the right
+									mPhysicsHandler.setVelocityX(0.0f);
+									mX = (base.getCameraWidth() - (getWidth() / 2));
+								}
+								
+								if (mX < (0.0f - (getWidth() / 2))) { //Prevents enemy leaving screen to the left
+									mPhysicsHandler.setVelocityX(0.0f);
+									setPosition(0.0f - (getWidth() / 2), mY);
+								}
+								
+								if (mY > baseY) { //Enemy just hit floor!
+									mIsAirborne = false;
+									mGroundHitSpeed = mPhysicsHandler.getVelocityY();
+									enemyFallDamage();
+								} else if (mY < baseY) { //Enemy is still falling!
+									if (mPhysicsHandler.getVelocityY() < -1000)
+										mPhysicsHandler.setVelocityY(-1000);
+									mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
+								}
+								// End of Airborne Section
+							} else {
+								// Non Airborne Section
+								if (!mCanAttackCastle) {
+									if (mPhysicsHandler.getVelocityX() == 0.0f) {
+										if (mX < (base.sCastle.getX() - base.sCastle.getWidth() / 6) && mY >= baseY) {
+											mPhysicsHandler.setVelocityX(mSpeed);
+											setAnimationCycle(1);
+										}
+									}
+									//if (mPhysicsHandler.getVelocityX() > 0.0f){
+										if (mX >= (base.sCastle.getX() - base.sCastle.getWidth() / 6)) {
+											mPhysicsHandler.setVelocityX(0.0f);
+											setPosition( (base.sCastle.getX() - base.sCastle.getWidth() / 6), mY);
+											//Attack castle
+											enemyAtCastle(pSecondsElapsed);
+										}
+									//}
+									if (mY < mInitialMoveY){
+										if ((mY - mPhysicsHandler.getVelocityY() - mGravity) < baseY)
+											mPhysicsHandler.setVelocityY(mPhysicsHandler.getVelocityY() + mGravity);
+										else {
+											mPhysicsHandler.setVelocityY(0.0f);
+											setPosition(mX, baseY);
+										}
+									} else if (mY + getHeight() / 2 >= baseY)
+										mPhysicsHandler.setVelocityY(0.0f);
+								}
+								// End of Non airborne Section
+							}
+						}
+					} else { //Enemy is tripping
+						if (!isAnimationRunning()) {
+							mTripping = false;
+							mPhysicsHandler.setEnabled(true);
+							setAnimationCycle(1);
+							base.sm.GameScreen.registerTouchArea(this);
+							if (!mTripTracker)
+								base.AchieveTracker.Trips();
+							else
+								mTripTracker = false;
+						}
+					}
+				} else {
+					//Enemy is dead, get rid of it
+					killEnemy();
 					
-					base.AchieveTracker.firstKill();
-					
-					sendEnemyToPool(mEnemyType, this);
+					if (!isAnimationRunning()) {
+						//base.sMoney += mCashWorth;
+						//base.mMoneyEarned += mCashWorth;
+						base.CustomHUD.updateCashValue();
+						base.sKillCount++;
+						base.mOnScreenEnemies--;
+						
+						base.AchieveTracker.firstKill();
+						
+						sendEnemyToPool(mEnemyType, this);
+					}
 				}
 			}
 			super.onManagedUpdate(pSecondsElapsed);
@@ -275,6 +279,7 @@ public class Enemy extends AnimatedSprite {
 			
 			switch(pSceneTouchEvent.getAction()) {
 				case TouchEvent.ACTION_DOWN:
+					mGrabbedEnemy = true;
 					if (!mTimerHandler) {
 						mCanAttackCastle = false;
 						mMoveDelay = 0.0f;
@@ -301,6 +306,7 @@ public class Enemy extends AnimatedSprite {
 						mIsAirborne = false;
 					break;
 				case TouchEvent.ACTION_UP:
+					mGrabbedEnemy = false;
 					if (mTimerHandler) {
 						// Get the time dragged, then remove the timer
 						mMoveDelay = mTimeMoved.getTimerSecondsElapsed();
