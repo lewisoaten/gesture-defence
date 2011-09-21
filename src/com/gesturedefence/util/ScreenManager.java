@@ -80,7 +80,7 @@ public class ScreenManager {
 	{
 		if(MainMenu == null)
 		{
-			MainMenu = new Scene(1);
+			MainMenu = new Scene();
 		
 			/* Setup the scrolling background, can be removed, was just trying it out */
 			
@@ -167,7 +167,7 @@ public class ScreenManager {
 	{
 		if (GameScreen == null)
 		{
-			GameScreen = new Scene(5); // 5 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana), 4 = Gesture Drawing layer)
+			GameScreen = new Scene(); // 5 layers, (0 = Gesture Zone, 1 = Enemy's, 2 = Castle, 3 = Power Ups(ie, mana), 4 = Gesture Drawing layer)
 		
 			GameScreen.setBackground(base.autoParallaxBackground);
 			//GameScreen.registerUpdateHandler(base.sRemoveStuff);
@@ -221,7 +221,7 @@ public class ScreenManager {
 								{
 									base.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
 									currentEarthDuration = 0;
-									base.sCamera.setCenter(base.sCamera.getWidth() / 2, base.sCamera.getHeight() / 2);
+									base.getCamera().setCenter(base.getCameraWidth() / 2, base.getCameraHeight() / 2);
 									base.backgroundSprite1.setPosition(0.0f, 0.0f + (base.getCameraHeight() - base.getParallaxLayerBack().getHeight()));
 									base.backgroundSprite2.setPosition(0.0f, 0.0f + 80);
 									base.backgroundSprite3.setPosition(0.0f + 35, 0.0f + 62);
@@ -237,7 +237,7 @@ public class ScreenManager {
 											base.CustomHUD.updateManaValue();
 											float theX = MathUtils.random(-10.0f, 10.0f);
 											float theY = MathUtils.random(-10.0f, 10.0f);
-											base.sCamera.offsetCenter(theX, theY);
+											base.getCamera().offsetCenter(theX, theY);
 											base.backgroundSprite1.setPosition(base.backgroundSprite1.getX() - theX, base.backgroundSprite1.getY() - theY);
 											base.backgroundSprite2.setPosition(base.backgroundSprite2.getX() - theX, base.backgroundSprite2.getY() - theY);
 											base.backgroundSprite3.setPosition(base.backgroundSprite3.getX() - theX, base.backgroundSprite3.getY() - theY);
@@ -253,7 +253,7 @@ public class ScreenManager {
 									{
 										float theX = MathUtils.random(-10.0f, 10.0f);
 										float theY = MathUtils.random(-10.0f, 10.0f);
-										base.sCamera.offsetCenter(theX, theY);
+										base.getCamera().offsetCenter(theX, theY);
 										base.backgroundSprite1.setPosition(base.backgroundSprite1.getX() - theX, base.backgroundSprite1.getY() - theY);
 										base.backgroundSprite2.setPosition(base.backgroundSprite2.getX() - theX, base.backgroundSprite2.getY() - theY);
 										base.backgroundSprite3.setPosition(base.backgroundSprite3.getX() - theX, base.backgroundSprite3.getY() - theY);
@@ -288,7 +288,7 @@ public class ScreenManager {
 	{
 		if (NewWaveScene == null)
 		{
-			NewWaveScene = new Scene(1);
+			NewWaveScene = new Scene();
 			
 			base.theWave.mWaveNumberMenuItem = new ChangeableTextMenuItem(GestureDefence.MENU_WAVE_NUMBER, base.mFont, "WAVE : " + base.theWave.getWaveNumber(), ("WAVE : XXXX").length());
 			NewWaveScene.attachChild(base.theWave.mWaveNumberMenuItem);
@@ -305,7 +305,7 @@ public class ScreenManager {
 	{
 		if (EndWaveScene == null)
 		{
-			EndWaveScene = new Scene(1);
+			EndWaveScene = new Scene();
 			
 			EndWaveScene.setBackground(new ColorBackground(0.0f, 0.0f, 1.0f));
 			
@@ -369,7 +369,7 @@ public class ScreenManager {
 	{
 		if (GameOverScene == null)
 		{
-			GameOverScene = new Scene(1);
+			GameOverScene = new Scene();
 			
 			Text gameOverText = new Text(base.getCameraWidth() / 2, base.getCameraHeight() / 2, base.mFont, "GAME OVER!", HorizontalAlign.CENTER) {
 				@Override
@@ -411,7 +411,7 @@ public class ScreenManager {
 	{
 		if (PauseScreen == null)
 		{
-			PauseScreen = new Scene(1);
+			PauseScreen = new Scene();
 			
 			Text someText = new Text( (base.getCameraWidth() / 2) - 10, (base.getCameraHeight() / 2) - 10, base.mFont, "PAUSED")
 			{
@@ -459,7 +459,7 @@ public class ScreenManager {
 		
 		if (QuitMenu == null)
 		{
-			QuitMenu = new Scene(1);
+			QuitMenu = new Scene();
 			
 			Text areyouSure = new Text( 30, (base.getCameraHeight() / 2) - 10, base.mFont, "Are you sure you want to quit?");
 			
@@ -500,7 +500,7 @@ public class ScreenManager {
 	public void ShowNewGameWarning() {
 		if (NewGameWarning == null)
 		{
-			NewGameWarning = new Scene(1);
+			NewGameWarning = new Scene();
 			
 			Text areyouSure = new Text( 30, (base.getCameraHeight() / 2) - 10, base.mFont2, "Starting a new Game will overwrite previous save!");
 			
@@ -536,21 +536,21 @@ public class ScreenManager {
 	}
 	
 	public void CameraCheck() { // Simply check to see if the camera is not in the default place
-		float checkX = base.sCamera.getCenterX() - (base.sCamera.getWidth() / 2);
-		float checkY = base.sCamera.getCenterY() - (base.sCamera.getHeight() / 2);
+		float checkX = base.getCamera().getCenterX() - (base.getCameraWidth() / 2);
+		float checkY = base.getCamera().getCenterY() - (base.getCameraHeight() / 2);
 		
 		if (checkX != 0.0f  || checkY != 0.0f)
 		{ // If it is not, remember where it is and then set it in the right place!
 			CameraShakeX = checkX;
 			CameraShakeY = checkY;
-			base.sCamera.setCenter(base.sCamera.getWidth() / 2, base.sCamera.getHeight() / 2);
+			base.getCamera().setCenter(base.getCameraWidth() / 2, base.getCameraHeight() / 2);
 		}
 	}
 	
 	public void CameraSet() {
 		if (CameraShakeX != 0.0f || CameraShakeY != 0.0f) // Check to see if the camera was previously moved
 		{ // If it was move the damn thing!
-			base.sCamera.offsetCenter(CameraShakeX, CameraShakeY);
+			base.getCamera().offsetCenter(CameraShakeX, CameraShakeY);
 			CameraShakeX = 0.0f;
 			CameraShakeY = 0.0f;
 		}
@@ -559,7 +559,7 @@ public class ScreenManager {
 	public void LoadShopMenu() {
 		if (InGameShop == null)
 		{
-			InGameShop = new Scene(1);
+			InGameShop = new Scene();
 			//Load the damn menu!
 			
 			Text BuyThing1 = new Text(10, base.getCameraHeight() / 2, base.mFont2, "Buy?")

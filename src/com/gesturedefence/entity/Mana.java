@@ -97,6 +97,7 @@ public class Mana extends Sprite {
 				if(this.mY < this.mInitialY)
 				{
 					this.mPhysicsHandler.setVelocityY(this.mPhysicsHandler.getVelocityY() + mGravity);
+					this.setPosition(mX, mInitialY); // Stop it buggering off!
 				}
 				else
 				{

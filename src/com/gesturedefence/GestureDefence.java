@@ -237,6 +237,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	private boolean hasGameLoaded = false;
 	private int xpProgression = 0; // Tracks XP progression!
+	private ArrayList<Line> line = new ArrayList<Line>();
 	
 	//Test STUFF
 	private static final String TAG = "GestureDefence";
@@ -357,6 +358,10 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public int getCameraHeight() {
 		return CAMERA_HEIGHT;
+	}
+	
+	public Camera getCamera() {
+		return sCamera;
 	}
 	
 	public void setManaPool(ManaPool thePool) {
@@ -544,7 +549,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		this.mEngine.registerUpdateHandler(new FPSLogger());
 		
 		//Create a load screen
-		final Scene loadScene = new Scene(1);
+		final Scene loadScene = new Scene();
 		loadScene.setBackground(new ColorBackground(0.09804f, 0.6274f, 0.8784f));
 		
 		//Show loading text on new load screen
@@ -860,7 +865,8 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 			 */
 			//GestureDefence.this.sm.GameScreen.getChild(1).detachChildren();
 			GestureDefence.this.mOnScreenEnemies = 0;
-			GestureDefence.this.sm.GameScreen.getChild(3).detachChildren();
+			clearGameScene();
+			//GestureDefence.this.sm.GameScreen.getChild(3).detachChildren();
 			
 			GestureDefence.this.sm.loadMainMenu();
 			return true;
@@ -875,7 +881,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 	
 	public void loadCastle(float X, float Y) { //Load the castle sprite at X/Y cords
 		GestureDefence.this.sCastle.setPosition(X, Y);
-		GestureDefence.this.sm.GameScreen.getChild(2).attachChild(sCastle);
+		GestureDefence.this.sm.GameScreen.attachChild(sCastle);
 	}
 	
 	public void loadNewEnemy(final float X, final float Y, final int type) {
@@ -905,7 +911,7 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 		}
 		
 		if (!newEnemy.hasParent())
-			GestureDefence.this.sm.GameScreen.getChild(1).attachChild(newEnemy); //Attach it to the screen
+			GestureDefence.this.sm.GameScreen.attachChild(newEnemy); //Attach it to the screen
 		if (!newEnemy.isVisible())
 			newEnemy.setVisible(true);
 		GestureDefence.this.sm.GameScreen.registerTouchArea(newEnemy); //Register a touch area for the enemy
@@ -931,9 +937,11 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				final float x2 = gesture.getStrokes().get(0).points[i + 2];
 				final float y2 = gesture.getStrokes().get(0).points[i + 3];
 				
-				final Line line = new Line(x1, y1, x2, y2, 5);
+				final Line tempLine = new Line(x1, y1, x2, y2, 5);
 				
-				GestureDefence.this.getEngine().getScene().getChild(4).attachChild(line);
+				GestureDefence.this.line.add(tempLine);
+				
+				GestureDefence.this.sm.GameScreen.attachChild(tempLine);
 				i += 2; //Makes sure the starting point of the next line is the end point of the previous line
 			}
 			catch (Throwable e)
@@ -942,14 +950,17 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				}
 			}
 			
-			TimerHandler DrawnGestureThing;
-			GestureDefence.this.sm.GameScreen.registerUpdateHandler(DrawnGestureThing = new TimerHandler(1, true, new ITimerCallback()
+			GestureDefence.this.sm.GameScreen.registerUpdateHandler(new TimerHandler(1, false, new ITimerCallback()
 			{ //Timer settings,
 				@Override
 				public void onTimePassed(final TimerHandler pTimerHandler)
 				{
+					for (int i = (GestureDefence.this.line.size() - 1); i >= 0; i --) {
+						final Line tempLine = GestureDefence.this.line.get(i);
+						GestureDefence.this.sm.GameScreen.detachChild(tempLine);
+					}
+					GestureDefence.this.line.clear();
 					GestureDefence.this.sm.GameScreen.unregisterUpdateHandler(pTimerHandler);
-					GestureDefence.this.sm.GameScreen.getChild(4).detachChildren();
 				}
 			}));
 			
@@ -1191,6 +1202,20 @@ public class GestureDefence extends BaseGameActivity implements IOnMenuItemClick
 				GestureDefence.this.lightningStrike.pause();
 			if (GestureDefence.this.ambient != null)
 				GestureDefence.this.ambient.pause();
+		}
+	}
+	
+	
+	public void clearGameScene() { // Remove's all attached children BUT the castle
+		int numOfChildren = GestureDefence.this.sm.GameScreen.getChildCount();
+		
+		for (int i = numOfChildren-1; i > 0; i --) {
+			if (GestureDefence.this.sm.GameScreen.getChild(i) == sCastle) {
+				//Do Nothing! (I think!)
+			}
+			else {
+				GestureDefence.this.sm.GameScreen.detachChild(GestureDefence.this.sm.GameScreen.getChild(i));
+			}
 		}
 	}
 	

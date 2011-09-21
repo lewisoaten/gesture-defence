@@ -146,6 +146,16 @@ public class Enemy extends AnimatedSprite {
 		
 		@Override
 		public void onManagedUpdate(final float pSecondsElapsed) {
+			//A Few checks to ensure not disappearing!
+			if (mX > (base.getCameraWidth() - (getWidth() / 2))) { //Prevents enemy leaving screen to the right
+				setPosition((base.getCameraWidth() - (getWidth() / 2)), mY);
+			}
+			if (mX < (0.0f - (getWidth() / 2))) { //Prevents enemy leaving screen to the left
+				setPosition(0.0f - (getWidth() / 2), mY);
+			}
+			if (mY < -1000) { //Prevents Enemy infinitely going up
+				mPhysicsHandler.setVelocityY(200); //Keep checking this! Not Sure?!
+			}
 			//Run's every frame!!
 			if (!mGrabbedEnemy) {
 				if (base.mLightningBolt //Lightning Strike Check
@@ -201,6 +211,7 @@ public class Enemy extends AnimatedSprite {
 								}
 								
 								if (mY > baseY) { //Enemy just hit floor!
+									setPosition(mX, baseY); // Ensure proper position!
 									mIsAirborne = false;
 									mGroundHitSpeed = mPhysicsHandler.getVelocityY();
 									enemyFallDamage();
@@ -386,7 +397,7 @@ public class Enemy extends AnimatedSprite {
 					Mana mMana = base.getManaPool().obtainPoolItem();
 					mMana.setup(mX, mY);
 					if (!mMana.hasParent())
-						base.sm.GameScreen.getChild(3).attachChild(mMana);
+						base.sm.GameScreen.attachChild(mMana);
 					base.sm.GameScreen.registerTouchArea(mMana);
 				}
 				
@@ -395,7 +406,7 @@ public class Enemy extends AnimatedSprite {
 					Gold mGold = base.getGoldPool().obtainPoolItem();
 					mGold.setup(mX, mY, 111);
 					if (!mGold.hasParent())
-						base.sm.GameScreen.getChild(3).attachChild(mGold);
+						base.sm.GameScreen.attachChild(mGold);
 					base.sm.GameScreen.registerTouchArea(mGold);
 				}
 				
